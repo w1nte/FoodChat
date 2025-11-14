@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
 
-const API_KEY_STORAGE_KEY = 'foodchat_api_key'
+const ENCRYPTED_KEY_STORAGE_KEY = 'foodchat_api_cipher'
 const HISTORY_STORAGE_KEY = 'foodchat_history'
 const LOCALE_STORAGE_KEY = 'foodchat_locale'
 const THEME_STORAGE_KEY = 'foodchat_theme'
@@ -87,6 +87,11 @@ const TRANSLATIONS = {
     settingsThemeDark: 'Dunkel',
     settingsClose: 'Schließen',
     apiKeyLocalInfo: 'Dein OpenAI Key wird ausschließlich verschlüsselt auf diesem Gerät gespeichert.',
+    passphraseSetupPrompt: 'Lege ein Passwort fest, um deinen API Key zu verschlüsseln:',
+    passphraseSetupRequired: 'Ohne Passwort kann ich den Key nicht sichern.',
+    passphraseUnlockPrompt: 'Bitte gib dein Passwort ein, um den gespeicherten API Key zu entsperren:',
+    passphraseInvalid: 'Passwort ist nicht korrekt.',
+    passphraseEncryptError: 'Der API Key konnte nicht gesichert werden. Versuche es erneut.',
   },
   en: {
     today: 'Today',
@@ -128,6 +133,11 @@ const TRANSLATIONS = {
     settingsThemeDark: 'Dark',
     settingsClose: 'Close',
     apiKeyLocalInfo: 'Your OpenAI key is stored only on this device.',
+    passphraseSetupPrompt: 'Set a passphrase to encrypt your API key:',
+    passphraseSetupRequired: 'I need a passphrase to store the key securely.',
+    passphraseUnlockPrompt: 'Enter your passphrase to unlock the stored API key:',
+    passphraseInvalid: 'Incorrect passphrase.',
+    passphraseEncryptError: 'Unable to securely store the API key. Please try again.',
   },
 }
 
@@ -168,9 +178,93 @@ const createFormatters = (locale) => {
   }
 }
 
-const readStoredApiKey = () => {
-  if (typeof window === 'undefined') return ''
-  return window.localStorage.getItem(API_KEY_STORAGE_KEY) ?? ''
+const textEncoder = new TextEncoder()
+const textDecoder = new TextDecoder()
+
+const arrayBufferToBase64 = (buffer) => {
+  const bytes = new Uint8Array(buffer)
+  let binary = ''
+  bytes.forEach((byte) => {
+    binary += String.fromCharCode(byte)
+  })
+  return typeof window === 'undefined' ? '' : window.btoa(binary)
+}
+
+const base64ToArrayBuffer = (base64) => {
+  if (typeof window === 'undefined' || !base64) return new ArrayBuffer(0)
+  const binary = window.atob(base64)
+  const bytes = new Uint8Array(binary.length)
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index)
+  }
+  return bytes.buffer
+}
+
+const deriveEncryptionKey = async (passphrase, saltBuffer) => {
+  const baseKey = await window.crypto.subtle.importKey(
+    'raw',
+    textEncoder.encode(passphrase),
+    { name: 'PBKDF2' },
+    false,
+    ['deriveKey'],
+  )
+
+  return window.crypto.subtle.deriveKey(
+    {
+      name: 'PBKDF2',
+      salt: saltBuffer,
+      iterations: 100000,
+      hash: 'SHA-256',
+    },
+    baseKey,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt'],
+  )
+}
+
+const encryptApiKeyPayload = async (value, passphrase) => {
+  const salt = window.crypto.getRandomValues(new Uint8Array(16))
+  const iv = window.crypto.getRandomValues(new Uint8Array(12))
+  const key = await deriveEncryptionKey(passphrase, salt.buffer)
+  const encrypted = await window.crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv },
+    key,
+    textEncoder.encode(value),
+  )
+  return {
+    salt: arrayBufferToBase64(salt.buffer),
+    iv: arrayBufferToBase64(iv.buffer),
+    ciphertext: arrayBufferToBase64(encrypted),
+  }
+}
+
+const decryptApiKeyPayload = async (payload, passphrase) => {
+  const saltBuffer = base64ToArrayBuffer(payload.salt)
+  const ivBuffer = base64ToArrayBuffer(payload.iv)
+  const ciphertextBuffer = base64ToArrayBuffer(payload.ciphertext)
+  const key = await deriveEncryptionKey(passphrase, saltBuffer)
+  const decrypted = await window.crypto.subtle.decrypt(
+    { name: 'AES-GCM', iv: new Uint8Array(ivBuffer) },
+    key,
+    ciphertextBuffer,
+  )
+  return textDecoder.decode(decrypted)
+}
+
+const readStoredEncryptedKey = () => {
+  if (typeof window === 'undefined') return null
+  const raw = window.localStorage.getItem(ENCRYPTED_KEY_STORAGE_KEY)
+  if (!raw) return null
+  try {
+    const parsed = JSON.parse(raw)
+    if (parsed && parsed.salt && parsed.iv && parsed.ciphertext) {
+      return parsed
+    }
+  } catch {
+    return null
+  }
+  return null
 }
 
 const readStoredLocale = () => {
@@ -307,7 +401,8 @@ function App() {
   const todayKey = getTodayKey()
   const [locale, setLocale] = useState(() => readStoredLocale())
   const [theme, setTheme] = useState(() => readStoredTheme())
-  const [apiKey, setApiKey] = useState(() => readStoredApiKey())
+  const [apiKey, setApiKey] = useState('')
+  const [encryptedApiData, setEncryptedApiData] = useState(() => readStoredEncryptedKey())
   const [history, setHistory] = useState(() => {
     const stored = readStoredHistory()
     if (!stored[todayKey]) {
@@ -324,6 +419,58 @@ function App() {
   const fileInputRef = useRef(null)
   const chatBodyRef = useRef(null)
   const t = (key) => TRANSLATIONS[locale]?.[key] ?? TRANSLATIONS[FALLBACK_LOCALE][key] ?? key
+  const clearComposer = () => {
+    setInputValue('')
+    setImageDraft(null)
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }
+
+  const persistEncryptedKey = useCallback(
+    async (value) => {
+      if (typeof window === 'undefined') return false
+      const translationSet = TRANSLATIONS[locale] ?? TRANSLATIONS[FALLBACK_LOCALE]
+      const passphrase = window.prompt(translationSet.passphraseSetupPrompt)
+      if (!passphrase) {
+        window.alert(translationSet.passphraseSetupRequired)
+        return false
+      }
+      try {
+        const payload = await encryptApiKeyPayload(value, passphrase)
+        window.localStorage.setItem(ENCRYPTED_KEY_STORAGE_KEY, JSON.stringify(payload))
+        setEncryptedApiData(payload)
+        return true
+      } catch (error) {
+        console.error('Failed to encrypt API key', error)
+        window.alert(translationSet.passphraseEncryptError)
+        return false
+      }
+    },
+    [locale],
+  )
+
+  const unlockStoredKey = useCallback(async () => {
+    if (!encryptedApiData || typeof window === 'undefined') return
+    const translationSet = TRANSLATIONS[locale] ?? TRANSLATIONS[FALLBACK_LOCALE]
+    const passphrase = window.prompt(translationSet.passphraseUnlockPrompt)
+    if (!passphrase) return
+    try {
+      const decrypted = await decryptApiKeyPayload(encryptedApiData, passphrase)
+      setApiKey(decrypted)
+    } catch (error) {
+      console.error('Failed to unlock API key', error)
+      window.alert(translationSet.passphraseInvalid)
+    }
+  }, [encryptedApiData, locale])
+
+  const handleRemoveApiKey = useCallback(() => {
+    if (typeof window !== 'undefined') {
+      window.localStorage.removeItem(ENCRYPTED_KEY_STORAGE_KEY)
+    }
+    setEncryptedApiData(null)
+    setApiKey('')
+  }, [])
 
   useEffect(() => {
     setHistory((prev) => {
@@ -331,11 +478,6 @@ function App() {
       return { ...prev, [todayKey]: createEmptyDay(todayKey) }
     })
   }, [todayKey])
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    window.localStorage.setItem(API_KEY_STORAGE_KEY, apiKey)
-  }, [apiKey])
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -352,6 +494,12 @@ function App() {
     if (typeof window === 'undefined') return
     window.localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(history))
   }, [history])
+
+  useEffect(() => {
+    if (!apiKey && encryptedApiData) {
+      unlockStoredKey()
+    }
+  }, [apiKey, encryptedApiData, unlockStoredKey])
 
   const activeDay = history[activeDayId] ?? createEmptyDay(activeDayId)
 
@@ -447,8 +595,12 @@ function App() {
           return
         }
 
+        const saved = await persistEncryptedKey(trimmed)
+        if (!saved) {
+          return
+        }
         setApiKey(trimmed)
-        setInputValue('')
+        clearComposer()
         appendMessage(todayKey, {
           id: createId(),
           role: 'assistant',
@@ -472,6 +624,7 @@ function App() {
       }
 
       appendMessage(todayKey, userMessage)
+      clearComposer()
       requestAnimationFrame(() => {
         const container = chatBodyRef.current
         if (container) {
@@ -797,7 +950,7 @@ function App() {
                 value={apiKey}
                 onChange={(event) => setApiKey(event.target.value)}
               />
-              <button type="button" onClick={() => setApiKey('')}>
+              <button type="button" onClick={handleRemoveApiKey}>
                 {t('settingsApiClear')}
               </button>
             </div>
