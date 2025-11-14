@@ -3,7 +3,7 @@
   --bg-primary: #1a0507;
   --bg-panel: #230608;
   --bg-bubble: #2f0a0d;
-  --bg-bubble-user: #fff2f3;
+  --bg-bubble-user: rgba(0, 0, 0, 0.4);
   --accent: #ff5b5b;
   --accent-dark: #821319;
   --text-primary: #fff5f5;
@@ -26,7 +26,7 @@
   --bg-primary: #fff4f3;
   --bg-panel: #fffafa;
   --bg-bubble: #ffe9e8;
-  --bg-bubble-user: #fffefe;
+  --bg-bubble-user: rgba(0, 0, 0, 0.1);
   --accent: #e43c42;
   --accent-dark: #821319;
   --text-primary: #321214;
@@ -232,7 +232,7 @@
 
 .message-user .bubble {
   background: var(--bg-bubble-user);
-  color: #0e1118;
+  color: inherit;
   border-bottom-right-radius: 4px;
   border-bottom-left-radius: 18px;
   align-items: flex-end;
@@ -265,9 +265,9 @@
 
 .calorie-pill {
   align-self: flex-start;
-  background: rgba(66, 242, 105, 0.12);
+  background: rgba(255, 91, 91, 0.12);
   color: var(--accent);
-  border: 1px solid rgba(66, 242, 105, 0.3);
+  border: 1px solid rgba(255, 91, 91, 0.3);
   padding: 0.2rem 0.6rem;
   border-radius: 999px;
   font-size: 0.85rem;
@@ -451,6 +451,7 @@
   align-items: center;
   justify-content: center;
   padding: 1rem;
+  z-index: 999;
 }
 
 .modal-panel {
@@ -598,7 +599,7 @@
   width: 46px;
   height: 26px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(0, 0, 0, 0.15);
   cursor: pointer;
 }
 
@@ -613,11 +614,14 @@
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  background: var(--accent);
+  background: var(--bg-panel);
   margin-left: 2px;
-  transition: transform 150ms ease;
+  transition: transform 150ms ease, background-color 150ms ease;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 .remember-toggle input:checked + span {
   transform: translateX(18px);
+  background: var(--accent);
+  box-shadow: 0 4px 12px rgba(255, 91, 91, 0.45);
 }
