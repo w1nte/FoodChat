@@ -534,7 +534,7 @@ function App() {
   const handleScroll = (event) => {
     const current = event.currentTarget.scrollHeight - event.currentTarget.scrollTop - event.currentTarget.offsetHeight
     const last = lastScrollTop.current
-    if (Math.abs(current - last) < 6) return
+    if (Math.abs(current - last) < 40) return
     if (current > last && current > 24) {
       setHeaderCollapsed(true)
     } else if (current < last) {
@@ -725,6 +725,14 @@ function App() {
   }
   const toggleRememberPassphrase = () => {
     const nextValue = !rememberPassphrase
+    if (nextValue && !cachedPassphrase) {
+      const translationSet = TRANSLATIONS[locale] ?? TRANSLATIONS[FALLBACK_LOCALE]
+      const input = window.prompt(translationSet.rememberPassphrasePrompt)
+      if (!input) {
+        return
+      }
+      setCachedPassphrase(input)
+    }
     if (!nextValue) {
       setCachedPassphrase('')
     }
