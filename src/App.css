@@ -20,14 +20,15 @@
   --chip-bg: rgba(255, 255, 255, 0.08);
   --composer-input-bg: rgba(32, 6, 8, 0.75);
   --toggle-bg: rgba(0, 0, 0, 0.8);
+  --chat-header-bg: linear-gradient(120deg, rgba(255, 94, 104, 0.1), rgba(167, 2, 15, 0.5));
 }
 
 :root[data-theme='light'] {
   color-scheme: light;
   --bg-primary: #fff4f3;
   --bg-panel: #fffafa;
-  --bg-bubble: #ffe9e8;
-  --bg-bubble-user: rgba(0, 0, 0, 0.1);
+  --bg-bubble: #f8dbda;
+  --bg-bubble-user: #e4827d;
   --accent: #e43c42;
   --accent-dark: #821319;
   --text-primary: #321214;
@@ -44,6 +45,7 @@
   --chip-bg: rgba(129, 19, 25, 0.08);
   --composer-input-bg: rgba(129, 19, 25, 0.05);
   --toggle-bg: rgba(0, 0, 0, 0.2);
+  --chat-header-bg: linear-gradient(120deg, rgba(255, 94, 104, 0.7), rgba(167, 2, 15, 0.5));
 }
 
 .icon-glyph {
@@ -80,11 +82,10 @@
   position: sticky;
   top: 0;
   z-index: 5;
-  background: linear-gradient(120deg, #ff5e68, #a7020f);
+  background: var(--chat-header-bg);
   padding: 0.75rem 0.85rem;
-  color: #330507;
+  color: #130203;
   display: flex;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
   transition: padding 150ms ease, opacity 150ms ease;
 }
 
@@ -164,7 +165,6 @@
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: rgba(51, 5, 7, 0.8);
   overflow: hidden;
   transition: max-height 150ms ease, opacity 150ms ease;
   max-height: 60px;
