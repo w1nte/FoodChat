@@ -26,6 +26,7 @@ Struktur:
   "message": "<deine kurze Antwort auf Deutsch>",
   "calories": <Zahl>
 }
+
 - "setting": Verwende nur, wenn der aktuelle Nutzer seinen OpenAI Key bestätigt oder ein lokaler Wert aktualisiert werden soll. calories = 0.
 - "nutrition": Schätze Kalorien anhand von Bild und/oder Text. "message" enthält eine kurze Beschreibung samt kcal. calories ist eine positive Ganzzahl.
 - "ask": Nutze dies, wenn mehr Informationen zu Portion, Zutaten oder Zubereitung fehlen. calories = 0.
@@ -183,6 +184,28 @@ const createFormatters = (locale) => {
     shortDayFormatter: new Intl.DateTimeFormat(tag, { day: '2-digit', month: '2-digit' }),
     numberFormatter: new Intl.NumberFormat(tag),
   }
+}
+
+const RESPONSE_SCHEMA = {
+  name: 'FoodChatResponse',
+  schema: {
+    type: 'object',
+    additionalProperties: false,
+    properties: {
+      type: {
+        type: 'string',
+        enum: ['nutrition', 'ask', 'setting'],
+      },
+      message: {
+        type: 'string',
+      },
+      calories: {
+        type: 'integer',
+        minimum: 0,
+      },
+    },
+    required: ['type', 'message', 'calories'],
+  },
 }
 
 const textEncoder = new TextEncoder()
@@ -719,6 +742,10 @@ function App() {
               content: contentPayload,
             },
           ],
+          response_format: {
+            type: 'json_schema',
+            json_schema: RESPONSE_SCHEMA,
+          },
         }),
       })
 
