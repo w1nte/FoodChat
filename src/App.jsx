@@ -357,6 +357,33 @@ const readFileAsDataUrl = (file) =>
     reader.readAsDataURL(file)
   })
 
+const optimizeImageForUpload = async (file, maxSize = 1024) => {
+  const fallbackDataUrl = await readFileAsDataUrl(file)
+  return new Promise((resolve) => {
+    const image = new Image()
+    image.onload = () => {
+      let { width, height } = image
+      const largestSide = Math.max(width, height)
+      if (largestSide > maxSize) {
+        const scale = maxSize / largestSide
+        width = width * scale
+        height = height * scale
+      }
+      const canvas = document.createElement('canvas')
+      canvas.width = width
+      canvas.height = height
+      const context = canvas.getContext('2d', { willReadFrequently: true })
+      if (!context) {
+        resolve(fallbackDataUrl)
+        return
+      }
+      context.drawImage(image, 0, 0, width, height)
+      resolve(canvas.toDataURL('image/jpeg', 0.82))
+    }
+    image.onerror = () => resolve(fallbackDataUrl)
+    image.src = fallbackDataUrl
+  })
+}
 const cleanModelText = (text = '') =>
   text
     .trim()
@@ -415,15 +442,15 @@ const extractAssistantContent = (message) => {
   return ''
 }
 
-const buildUserContent = (text, image) => {
+const buildUserContent = (text, imageDataUrl) => {
   const content = []
   if (text) {
     content.push({ type: 'text', text })
   }
-  if (image?.preview) {
+  if (imageDataUrl) {
     content.push({
       type: 'image_url',
-      image_url: { url: image.preview },
+      image_url: { url: imageDataUrl },
     })
   }
   return content
@@ -486,17 +513,26 @@ function App() {
   const unlockAttemptedRef = useRef(false)
   const lastScrollTop = useRef(0)
   const t = (key) => TRANSLATIONS[locale]?.[key] ?? TRANSLATIONS[FALLBACK_LOCALE][key] ?? key
-  const clearComposer = () => {
+
+  const releaseImageDraft = useCallback((draft) => {
+    if (draft?.previewUrl && typeof URL !== 'undefined') {
+      URL.revokeObjectURL(draft.previewUrl)
+    }
+  }, [])
+
+  const clearComposer = useCallback(() => {
     setInputValue('')
-    setImageDraft(null)
+    setImageDraft((previous) => {
+      releaseImageDraft(previous)
+      return null
+    })
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
     }
-  }
+  }, [releaseImageDraft])
 
   const handleScroll = (event) => {
     const current = event.currentTarget.scrollHeight - event.currentTarget.scrollTop - event.currentTarget.offsetHeight
-    console.log(current);
     const last = lastScrollTop.current
     if (Math.abs(current - last) < 6) return
     if (current > last && current > 24) {
@@ -616,6 +652,13 @@ function App() {
     container.scrollTop = container.scrollHeight
   }, [activeDayId])
 
+  useEffect(
+    () => () => {
+      releaseImageDraft(imageDraft)
+    },
+    [imageDraft, releaseImageDraft],
+  )
+
   useEffect(() => {
     if (!isSending) return
     const container = chatBodyRef.current
@@ -682,19 +725,21 @@ function App() {
   }
   const toggleRememberPassphrase = () => {
     const nextValue = !rememberPassphrase
-    if (nextValue && !cachedPassphrase) {
-      const translationSet = TRANSLATIONS[locale] ?? TRANSLATIONS[FALLBACK_LOCALE]
-      const input = window.prompt(translationSet.rememberPassphrasePrompt)
-      if (!input) {
-        return
-      }
-      setCachedPassphrase(input)
-    }
     if (!nextValue) {
       setCachedPassphrase('')
     }
     setRememberPassphrase(nextValue)
   }
+
+  const removeImageDraft = useCallback(() => {
+    setImageDraft((previous) => {
+      releaseImageDraft(previous)
+      return null
+    })
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }, [releaseImageDraft])
 
   const appendMessage = (dayKey, message) => {
     setHistory((prev) => {
@@ -763,6 +808,11 @@ function App() {
         return
       }
 
+      let imagePayloadUrl = null
+      if (payloadImage?.file) {
+        imagePayloadUrl = await optimizeImageForUpload(payloadImage.file)
+      }
+
       const todaysMessages = history[todayKey]?.messages ?? []
       const historyTurns = todaysMessages.slice(-8).map(convertMessageToModelTurn).filter(Boolean)
 
@@ -770,7 +820,7 @@ function App() {
         id: createId(),
         role: 'user',
         text: trimmed,
-        image: payloadImage?.preview ?? null,
+        image: imagePayloadUrl ?? null,
         createdAt: new Date().toISOString(),
       }
 
@@ -784,7 +834,7 @@ function App() {
       })
 
       const preparedText = trimmed || (payloadImage ? t('photoFallback') : '')
-      const contentPayload = buildUserContent(preparedText, payloadImage)
+      const contentPayload = buildUserContent(preparedText, imagePayloadUrl)
 
       if (!contentPayload.length) {
         appendMessage(todayKey, {
@@ -867,18 +917,18 @@ function App() {
     }
   }
 
-  const handleImageChange = async (event) => {
+  const handleImageChange = (event) => {
     const file = event.target.files?.[0]
     if (!file) return
-    try {
-      const preview = await readFileAsDataUrl(file)
-      setImageDraft({
+    const previewUrl = typeof URL !== 'undefined' ? URL.createObjectURL(file) : ''
+    setImageDraft((previous) => {
+      releaseImageDraft(previous)
+      return {
         name: file.name,
-        preview,
-      })
-    } catch {
-      setImageDraft(null)
-    }
+        previewUrl,
+        file,
+      }
+    })
   }
 
   const placeholder = !apiKey ? t('placeholderApiKey') : t('placeholderMeal')
@@ -1016,10 +1066,10 @@ function App() {
 
         {imageDraft && (
           <div className="image-preview">
-            <img src={imageDraft.preview} alt="Ausgewählte Mahlzeit" />
+            <img src={imageDraft.previewUrl} alt="Ausgewählte Mahlzeit" />
             <div>
               <p>{imageDraft.name}</p>
-              <button type="button" onClick={() => setImageDraft(null)}>
+              <button type="button" onClick={removeImageDraft}>
                 {t('removeImage')}
               </button>
             </div>
