@@ -56,6 +56,8 @@ const TRANSLATIONS = {
     placeholderApiKey: 'Dein API Key',
     placeholderMeal: 'Was hast du gegessen?',
     removeImage: 'Entfernen',
+    introTitle: 'Dein smarter Ernährungs-Chat',
+    introBody: 'FoodChat analysiert deine Mahlzeiten, schätzt Kalorien und hilft dir bei Fragen – einfach Foto oder Text senden.',
     archiveHint: 'Du schaust dir den Verlauf an. Neue Einträge können nur heute erstellt werden.',
     archiveBack: 'Zurück zu Heute',
     historyTitle: 'Chat-Verlauf',
@@ -96,6 +98,8 @@ const TRANSLATIONS = {
     placeholderApiKey: 'Your API Key',
     placeholderMeal: 'What did you eat?',
     removeImage: 'Remove',
+    introTitle: 'Your smart nutrition chat',
+    introBody: 'FoodChat analyzes your meals, estimates calories, and asks for details when needed—just send text or a photo.',
     archiveHint: 'You are viewing history. New entries can only be added today.',
     archiveBack: 'Back to Today',
     historyTitle: 'Chat history',
@@ -316,6 +320,7 @@ function App() {
   const [showSettings, setShowSettings] = useState(false)
   const [isSending, setIsSending] = useState(false)
   const fileInputRef = useRef(null)
+  const chatBodyRef = useRef(null)
   const t = (key) => TRANSLATIONS[locale]?.[key] ?? TRANSLATIONS[FALLBACK_LOCALE][key] ?? key
 
   useEffect(() => {
@@ -346,12 +351,19 @@ function App() {
     window.localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(history))
   }, [history])
 
+  const activeDay = history[activeDayId] ?? createEmptyDay(activeDayId)
+
+  useEffect(() => {
+    const container = chatBodyRef.current
+    if (!container) return
+    container.scrollTop = container.scrollHeight
+  }, [activeDayId, activeDay.messages.length])
+
   const { timeFormatter, longDayFormatter, shortDayFormatter, numberFormatter } = useMemo(
     () => createFormatters(locale),
     [locale],
   )
 
-  const activeDay = history[activeDayId] ?? createEmptyDay(activeDayId)
   const todaysDay = history[todayKey] ?? createEmptyDay(todayKey)
   const todaysCalories = useMemo(() => sumCalories(todaysDay), [todaysDay])
   const activeDayLabel =
@@ -584,7 +596,13 @@ function App() {
           <p className="day-note">{activeDayLabel}</p>
         </header>
 
-        <main className="chat-body">
+        <main className="chat-body" ref={chatBodyRef}>
+          {!apiKey && (
+            <div className="intro-card">
+              <h3>{t('introTitle')}</h3>
+              <p>{t('introBody')}</p>
+            </div>
+          )}
           {activeDay.messages.length === 0 && (
             <div className="chat-empty">
               <p>{t('emptyTitle')}</p>

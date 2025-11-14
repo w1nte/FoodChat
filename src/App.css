@@ -169,6 +169,25 @@
   color: var(--text-muted);
 }
 
+.intro-card {
+  border-radius: 18px;
+  padding: 1.25rem 1.5rem;
+  background: var(--bg-bubble);
+  color: var(--text-primary);
+  border: 1px solid var(--border-soft);
+  box-shadow: var(--shadow-strong);
+}
+
+.intro-card h3 {
+  margin: 0 0 0.4rem;
+  font-size: 1.1rem;
+}
+
+.intro-card p {
+  margin: 0;
+  color: var(--text-muted);
+}
+
 .chat-empty p {
   margin-bottom: 0.25rem;
   color: var(--text-primary);
