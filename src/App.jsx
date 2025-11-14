@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
 
 const ENCRYPTED_KEY_STORAGE_KEY = 'foodchat_api_cipher'
+const PASSPHRASE_STORAGE_KEY = 'foodchat_passphrase'
 const HISTORY_STORAGE_KEY = 'foodchat_history'
 const LOCALE_STORAGE_KEY = 'foodchat_locale'
 const THEME_STORAGE_KEY = 'foodchat_theme'
@@ -92,6 +93,9 @@ const TRANSLATIONS = {
     passphraseUnlockPrompt: 'Bitte gib dein Passwort ein, um den gespeicherten API Key zu entsperren:',
     passphraseInvalid: 'Passwort ist nicht korrekt.',
     passphraseEncryptError: 'Der API Key konnte nicht gesichert werden. Versuche es erneut.',
+    rememberPassphraseLabel: 'Passwort auf diesem Gerät merken',
+    rememberPassphraseHint: 'Wenn aktiviert, musst du das Passwort nicht bei jedem Start erneut eingeben.',
+    rememberPassphrasePrompt: 'Bitte gib dein aktuelles Passwort ein, damit ich es speichern kann:',
   },
   en: {
     today: 'Today',
@@ -138,6 +142,9 @@ const TRANSLATIONS = {
     passphraseUnlockPrompt: 'Enter your passphrase to unlock the stored API key:',
     passphraseInvalid: 'Incorrect passphrase.',
     passphraseEncryptError: 'Unable to securely store the API key. Please try again.',
+    rememberPassphraseLabel: 'Remember passphrase on this device',
+    rememberPassphraseHint: 'When enabled you will not be asked for your passphrase on every launch.',
+    rememberPassphrasePrompt: 'Enter your current passphrase so I can remember it:',
   },
 }
 
@@ -265,6 +272,11 @@ const readStoredEncryptedKey = () => {
     return null
   }
   return null
+}
+
+const readStoredPassphrase = () => {
+  if (typeof window === 'undefined') return ''
+  return window.localStorage.getItem(PASSPHRASE_STORAGE_KEY) ?? ''
 }
 
 const readStoredLocale = () => {
@@ -403,6 +415,9 @@ function App() {
   const [theme, setTheme] = useState(() => readStoredTheme())
   const [apiKey, setApiKey] = useState('')
   const [encryptedApiData, setEncryptedApiData] = useState(() => readStoredEncryptedKey())
+  const initialPassphrase = readStoredPassphrase()
+  const [cachedPassphrase, setCachedPassphrase] = useState(initialPassphrase)
+  const [rememberPassphrase, setRememberPassphrase] = useState(Boolean(initialPassphrase))
   const [history, setHistory] = useState(() => {
     const stored = readStoredHistory()
     if (!stored[todayKey]) {
@@ -418,6 +433,7 @@ function App() {
   const [isSending, setIsSending] = useState(false)
   const fileInputRef = useRef(null)
   const chatBodyRef = useRef(null)
+  const unlockAttemptedRef = useRef(false)
   const t = (key) => TRANSLATIONS[locale]?.[key] ?? TRANSLATIONS[FALLBACK_LOCALE][key] ?? key
   const clearComposer = () => {
     setInputValue('')
@@ -431,10 +447,16 @@ function App() {
     async (value) => {
       if (typeof window === 'undefined') return false
       const translationSet = TRANSLATIONS[locale] ?? TRANSLATIONS[FALLBACK_LOCALE]
-      const passphrase = window.prompt(translationSet.passphraseSetupPrompt)
+      let passphrase = cachedPassphrase
       if (!passphrase) {
-        window.alert(translationSet.passphraseSetupRequired)
-        return false
+        passphrase = window.prompt(translationSet.passphraseSetupPrompt)
+        if (!passphrase) {
+          window.alert(translationSet.passphraseSetupRequired)
+          return false
+        }
+        if (rememberPassphrase) {
+          setCachedPassphrase(passphrase)
+        }
       }
       try {
         const payload = await encryptApiKeyPayload(value, passphrase)
@@ -447,14 +469,20 @@ function App() {
         return false
       }
     },
-    [locale],
+    [cachedPassphrase, rememberPassphrase, locale],
   )
 
   const unlockStoredKey = useCallback(async () => {
     if (!encryptedApiData || typeof window === 'undefined') return
     const translationSet = TRANSLATIONS[locale] ?? TRANSLATIONS[FALLBACK_LOCALE]
-    const passphrase = window.prompt(translationSet.passphraseUnlockPrompt)
-    if (!passphrase) return
+    let passphrase = cachedPassphrase
+    if (!passphrase) {
+      passphrase = window.prompt(translationSet.passphraseUnlockPrompt)
+      if (!passphrase) return
+      if (rememberPassphrase) {
+        setCachedPassphrase(passphrase)
+      }
+    }
     try {
       const decrypted = await decryptApiKeyPayload(encryptedApiData, passphrase)
       setApiKey(decrypted)
@@ -462,7 +490,7 @@ function App() {
       console.error('Failed to unlock API key', error)
       window.alert(translationSet.passphraseInvalid)
     }
-  }, [encryptedApiData, locale])
+  }, [cachedPassphrase, encryptedApiData, rememberPassphrase, locale])
 
   const handleRemoveApiKey = useCallback(() => {
     if (typeof window !== 'undefined') {
@@ -496,10 +524,22 @@ function App() {
   }, [history])
 
   useEffect(() => {
-    if (!apiKey && encryptedApiData) {
-      unlockStoredKey()
+    unlockAttemptedRef.current = false
+  }, [encryptedApiData])
+
+  if (!apiKey && encryptedApiData && !unlockAttemptedRef.current) {
+    unlockAttemptedRef.current = true
+    unlockStoredKey()
+  }
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    if (rememberPassphrase && cachedPassphrase) {
+      window.localStorage.setItem(PASSPHRASE_STORAGE_KEY, cachedPassphrase)
+    } else {
+      window.localStorage.removeItem(PASSPHRASE_STORAGE_KEY)
     }
-  }, [apiKey, encryptedApiData, unlockStoredKey])
+  }, [rememberPassphrase, cachedPassphrase])
 
   const activeDay = history[activeDayId] ?? createEmptyDay(activeDayId)
 
@@ -543,6 +583,21 @@ function App() {
     if (THEMES.includes(nextTheme)) {
       setTheme(nextTheme)
     }
+  }
+  const toggleRememberPassphrase = () => {
+    const nextValue = !rememberPassphrase
+    if (nextValue && !cachedPassphrase) {
+      const translationSet = TRANSLATIONS[locale] ?? TRANSLATIONS[FALLBACK_LOCALE]
+      const input = window.prompt(translationSet.rememberPassphrasePrompt)
+      if (!input) {
+        return
+      }
+      setCachedPassphrase(input)
+    }
+    if (!nextValue) {
+      setCachedPassphrase('')
+    }
+    setRememberPassphrase(nextValue)
   }
 
   const appendMessage = (dayKey, message) => {
@@ -992,6 +1047,19 @@ function App() {
                   {t('settingsThemeLight')}
                 </button>
               </div>
+            </div>
+
+            <div className="settings-section">
+              <span>{t('rememberPassphraseLabel')}</span>
+              <label className="remember-toggle">
+                <input
+                  type="checkbox"
+                  checked={rememberPassphrase}
+                  onChange={toggleRememberPassphrase}
+                />
+                <span></span>
+              </label>
+              <small>{t('rememberPassphraseHint')}</small>
             </div>
           </div>
         </div>
