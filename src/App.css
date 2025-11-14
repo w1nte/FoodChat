@@ -19,6 +19,7 @@
   --archive-bg: rgba(45, 9, 12, 0.9);
   --chip-bg: rgba(255, 255, 255, 0.08);
   --composer-input-bg: rgba(32, 6, 8, 0.75);
+  --toggle-bg: rgba(0, 0, 0, 0.8);
 }
 
 :root[data-theme='light'] {
@@ -42,6 +43,7 @@
   --archive-bg: rgba(252, 205, 205, 0.5);
   --chip-bg: rgba(129, 19, 25, 0.08);
   --composer-input-bg: rgba(129, 19, 25, 0.05);
+  --toggle-bg: rgba(0, 0, 0, 0.2);
 }
 
 .icon-glyph {
@@ -599,7 +601,7 @@
   width: 46px;
   height: 26px;
   border-radius: 999px;
-  background: rgba(0, 0, 0, 0.15);
+  background: var(--toggle-bg);
   cursor: pointer;
 }
 
