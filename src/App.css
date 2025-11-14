@@ -150,6 +150,16 @@
   margin-top: 0.2rem;
 }
 
+.header-macros {
+  display: flex;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(51, 5, 7, 0.8);
+  margin-top: 0.15rem;
+}
+
 .chat-body {
   flex: 1;
   display: flex;
@@ -284,9 +294,30 @@
 
 .nutrition-meta {
   display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.macro-top {
+  display: flex;
   align-items: center;
   gap: 0.5rem;
   flex-wrap: wrap;
+}
+
+.macro-row {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.macro-pill {
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 0.15rem 0.65rem;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .nutrition-toggle {

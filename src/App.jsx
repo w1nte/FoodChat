@@ -24,11 +24,13 @@ Struktur:
 {
   "type": "setting" | "nutrition" | "ask",
   "message": "<deine kurze Antwort auf Deutsch>",
-  "calories": <Zahl>
+  "calories": <Zahl>,
+  "protein": <Zahl>,
+  "fat": <Zahl>
 }
 
 - "setting": Verwende nur, wenn der aktuelle Nutzer seinen OpenAI Key bestätigt oder ein lokaler Wert aktualisiert werden soll. calories = 0.
-- "nutrition": Schätze Kalorien anhand von Bild und/oder Text. "message" enthält eine kurze Beschreibung samt kcal. calories ist eine positive Ganzzahl.
+- "nutrition": Schätze Kalorien, Protein und Fett anhand von Bild und/oder Text. "message" enthält eine kurze Beschreibung samt kcal. calories/protein/fat sind positive Ganzzahlen (Protein/Fett in g).
 - "ask": Nutze dies, wenn mehr Informationen zu Portion, Zutaten oder Zubereitung fehlen. calories = 0.
 Nutze ausschließlich die bereitgestellten Informationen.`,
   en: `You are FoodChat, a nutrition assistant for photo and text descriptions of meals.
@@ -37,10 +39,12 @@ Structure:
 {
   "type": "setting" | "nutrition" | "ask",
   "message": "<your short answer in English>",
-  "calories": <number>
+  "calories": <number>,
+  "protein": <number>,
+  "fat": <number>
 }
 - "setting": Use only to confirm the API key or change a local setting. calories = 0.
-- "nutrition": Estimate calories based on the provided description or image. "message" should include a short description and kcal. calories is a positive integer.
+- "nutrition": Estimate calories, protein, and fat from the provided description or image. "message" should include a short description plus kcal. calories/protein/fat are positive integers (grams for protein/fat).
 - "ask": Use when you need more info about portion size, ingredients, or preparation. calories = 0.
 Use only the supplied information.`,
 }
@@ -97,6 +101,8 @@ const TRANSLATIONS = {
     rememberPassphraseLabel: 'Passwort auf diesem Gerät merken',
     rememberPassphraseHint: 'Wenn aktiviert, musst du das Passwort nicht bei jedem Start erneut eingeben.',
     rememberPassphrasePrompt: 'Bitte gib dein aktuelles Passwort ein, damit ich es speichern kann:',
+    proteinLabel: 'Protein',
+    fatLabel: 'Fett',
   },
   en: {
     today: 'Today',
@@ -146,6 +152,8 @@ const TRANSLATIONS = {
     rememberPassphraseLabel: 'Remember passphrase on this device',
     rememberPassphraseHint: 'When enabled you will not be asked for your passphrase on every launch.',
     rememberPassphrasePrompt: 'Enter your current passphrase so I can remember it:',
+    proteinLabel: 'Protein',
+    fatLabel: 'Fat',
   },
 }
 
@@ -203,8 +211,16 @@ const RESPONSE_SCHEMA = {
         type: 'integer',
         minimum: 0,
       },
+      protein: {
+        type: 'integer',
+        minimum: 0,
+      },
+      fat: {
+        type: 'integer',
+        minimum: 0,
+      },
     },
-    required: ['type', 'message', 'calories'],
+    required: ['type', 'message', 'calories', 'protein', 'fat'],
   },
 }
 
@@ -354,6 +370,8 @@ const parseAssistantPayload = (rawText, fallbackMessage) => {
     type: 'ask',
     message: fallbackMessage,
     calories: 0,
+    protein: 0,
+    fat: 0,
   }
   if (!rawText) return fallback
   try {
@@ -367,7 +385,15 @@ const parseAssistantPayload = (rawText, fallbackMessage) => {
       type === 'nutrition' && Number.isFinite(Number(parsed.calories))
         ? Math.max(0, Math.round(Number(parsed.calories)))
         : 0
-    return { type, message, calories }
+    const protein =
+      type === 'nutrition' && Number.isFinite(Number(parsed.protein))
+        ? Math.max(0, Math.round(Number(parsed.protein)))
+        : 0
+    const fat =
+      type === 'nutrition' && Number.isFinite(Number(parsed.fat))
+        ? Math.max(0, Math.round(Number(parsed.fat)))
+        : 0
+    return { type, message, calories, protein, fat }
   } catch {
     return fallback
   }
@@ -588,6 +614,26 @@ function App() {
 
   const todaysDay = history[todayKey] ?? createEmptyDay(todayKey)
   const todaysCalories = useMemo(() => sumCalories(todaysDay), [todaysDay])
+  const todaysProtein = useMemo(
+    () =>
+      todaysDay.messages.reduce((total, message) => {
+        if (message.kind === 'nutrition' && message.protein && !message.disabled) {
+          return total + message.protein
+        }
+        return total
+      }, 0),
+    [todaysDay],
+  )
+  const todaysFat = useMemo(
+    () =>
+      todaysDay.messages.reduce((total, message) => {
+        if (message.kind === 'nutrition' && message.fat && !message.disabled) {
+          return total + message.fat
+        }
+        return total
+      }, 0),
+    [todaysDay],
+  )
   const activeDayLabel =
     activeDayId === todayKey ? t('todayUpper') : formatDay(activeDayId, longDayFormatter)
   const historyItems = useMemo(() => {
@@ -773,6 +819,8 @@ function App() {
         text: structured.message,
         kind: structured.type,
         calories: structured.calories,
+        protein: structured.protein,
+        fat: structured.fat,
         createdAt: new Date().toISOString(),
       }
       if (structured.type === 'nutrition') {
@@ -844,6 +892,14 @@ function App() {
               <strong>
                 {numberFormatter.format(todaysCalories)} kcal
               </strong>
+              <div className="header-macros">
+                <span>
+                  {t('proteinLabel')}: {numberFormatter.format(todaysProtein)} g
+                </span>
+                <span>
+                  {t('fatLabel')}: {numberFormatter.format(todaysFat)} g
+                </span>
+              </div>
             </div>
           </div>
           <p className="day-note">{activeDayLabel}</p>
@@ -872,6 +928,8 @@ function App() {
               ]
                 .filter(Boolean)
                 .join(' ')
+              const proteinValue = Number.isFinite(message.protein) ? message.protein : 0
+              const fatValue = Number.isFinite(message.fat) ? message.fat : 0
 
               return (
                 <li key={message.id} className={bubbleClass}>
@@ -882,25 +940,35 @@ function App() {
                     {message.text && <p>{message.text}</p>}
                     {message.kind === 'nutrition' && (
                       <div className="nutrition-meta">
-                        <span
-                          className={`calorie-pill ${message.disabled ? 'disabled' : ''}`}
-                        >
-                          +{numberFormatter.format(message.calories)} kcal
-                        </span>
-                        <button
-                          type="button"
-                          className="nutrition-toggle"
-                          onClick={() => toggleNutritionEntry(message.id, activeDayId)}
-                          aria-label={
-                            message.disabled
-                              ? t('messageLabelActivate')
-                              : t('messageLabelDeactivate')
-                          }
-                        >
-                          <span className="icon-glyph" aria-hidden="true">
-                            {message.disabled ? 'visibility' : 'visibility_off'}
+                        <div className="macro-top">
+                          <span
+                            className={`calorie-pill ${message.disabled ? 'disabled' : ''}`}
+                          >
+                            +{numberFormatter.format(message.calories)} kcal
                           </span>
-                        </button>
+                          <button
+                            type="button"
+                            className="nutrition-toggle"
+                            onClick={() => toggleNutritionEntry(message.id, activeDayId)}
+                            aria-label={
+                              message.disabled
+                                ? t('messageLabelActivate')
+                                : t('messageLabelDeactivate')
+                            }
+                          >
+                            <span className="icon-glyph" aria-hidden="true">
+                              {message.disabled ? 'visibility' : 'visibility_off'}
+                            </span>
+                          </button>
+                        </div>
+                        <div className="macro-row">
+                          <span className="macro-pill">
+                            {t('proteinLabel')}: {numberFormatter.format(proteinValue)} g
+                          </span>
+                          <span className="macro-pill">
+                            {t('fatLabel')}: {numberFormatter.format(fatValue)} g
+                          </span>
+                        </div>
                       </div>
                     )}
                     {message.kind === 'ask' && <span className="hint-pill">{t('hintAsk')}</span>}
