@@ -1,47 +1,47 @@
 :root {
   color-scheme: dark;
-  --bg-primary: #06080b;
-  --bg-panel: #11141a;
-  --bg-bubble: #1b212c;
-  --bg-bubble-user: #f6f6f7;
-  --accent: #42f269;
-  --accent-dark: #0c4a1c;
-  --text-primary: #f7fafd;
-  --text-muted: #8f9aae;
-  --border-soft: rgba(255, 255, 255, 0.05);
-  --shadow-strong: 0 30px 45px rgba(3, 7, 12, 0.65);
-  --page-background: radial-gradient(circle at top, rgba(66, 242, 105, 0.28), transparent 45%),
-    #06080b;
-  --surface-muted: rgba(18, 22, 30, 0.9);
-  --surface-muted-border: rgba(255, 255, 255, 0.07);
-  --composer-bg: rgba(6, 8, 11, 0.95);
-  --overlay-bg: rgba(3, 6, 8, 0.7);
-  --archive-bg: rgba(17, 20, 26, 0.9);
-  --chip-bg: rgba(255, 255, 255, 0.05);
-  --composer-input-bg: rgba(10, 12, 16, 0.75);
+  --bg-primary: #1a0507;
+  --bg-panel: #230608;
+  --bg-bubble: #2f0a0d;
+  --bg-bubble-user: #fff2f3;
+  --accent: #ff5b5b;
+  --accent-dark: #821319;
+  --text-primary: #fff5f5;
+  --text-muted: #c8a8a9;
+  --border-soft: rgba(255, 155, 155, 0.12);
+  --shadow-strong: 0 30px 45px rgba(52, 6, 9, 0.65);
+  --page-background: radial-gradient(circle at top, rgba(255, 91, 91, 0.35), transparent 45%),
+    #1a0507;
+  --surface-muted: rgba(41, 8, 11, 0.9);
+  --surface-muted-border: rgba(255, 155, 155, 0.18);
+  --composer-bg: rgba(22, 4, 6, 0.95);
+  --overlay-bg: rgba(7, 2, 3, 0.72);
+  --archive-bg: rgba(45, 9, 12, 0.9);
+  --chip-bg: rgba(255, 255, 255, 0.08);
+  --composer-input-bg: rgba(32, 6, 8, 0.75);
 }
 
 :root[data-theme='light'] {
   color-scheme: light;
-  --bg-primary: #f6f8fc;
-  --bg-panel: #ffffff;
-  --bg-bubble: #eef1f7;
-  --bg-bubble-user: #fbfbfd;
-  --accent: #1c9c45;
-  --accent-dark: #0b6126;
-  --text-primary: #0f172a;
-  --text-muted: #5e6475;
-  --border-soft: rgba(15, 23, 42, 0.08);
-  --shadow-strong: 0 30px 45px rgba(15, 23, 42, 0.08);
-  --page-background: radial-gradient(circle at top, rgba(43, 201, 99, 0.48), transparent 45%),
-    #dddddd;
-  --surface-muted: rgba(243, 245, 249, 0.95);
-  --surface-muted-border: rgba(15, 23, 42, 0.1);
-  --composer-bg: rgba(248, 249, 253, 0.95);
-  --overlay-bg: rgba(9, 12, 20, 0.35);
-  --archive-bg: rgba(15, 18, 27, 0.06);
-  --chip-bg: rgba(15, 23, 42, 0.05);
-  --composer-input-bg: rgba(15, 23, 42, 0.04);
+  --bg-primary: #fff4f3;
+  --bg-panel: #fffafa;
+  --bg-bubble: #ffe9e8;
+  --bg-bubble-user: #fffefe;
+  --accent: #e43c42;
+  --accent-dark: #821319;
+  --text-primary: #321214;
+  --text-muted: #875b5d;
+  --border-soft: rgba(129, 19, 25, 0.16);
+  --shadow-strong: 0 30px 45px rgba(129, 19, 25, 0.08);
+  --page-background: radial-gradient(circle at top, rgba(228, 60, 66, 0.4), transparent 50%),
+    #fff4f3;
+  --surface-muted: rgba(255, 233, 233, 0.95);
+  --surface-muted-border: rgba(129, 19, 25, 0.15);
+  --composer-bg: rgba(255, 248, 248, 0.9);
+  --overlay-bg: rgba(41, 7, 9, 0.3);
+  --archive-bg: rgba(252, 205, 205, 0.5);
+  --chip-bg: rgba(129, 19, 25, 0.08);
+  --composer-input-bg: rgba(129, 19, 25, 0.05);
 }
 
 .icon-glyph {
@@ -78,9 +78,9 @@
   position: sticky;
   top: 0;
   z-index: 5;
-  background: linear-gradient(120deg, #38ef7d, #0bab64);
+  background: linear-gradient(120deg, #ff5e68, #a7020f);
   padding: 1.25rem 1.25rem 0.65rem;
-  color: #06230a;
+  color: #330507;
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
@@ -103,7 +103,7 @@
 .day-button {
   border: none;
   background: rgba(255, 255, 255, 0.25);
-  color: #06230a;
+  color: #330507;
   font-weight: 600;
   letter-spacing: 0.02em;
   padding: 0.45rem 1.1rem;
@@ -114,7 +114,7 @@
 .settings-button {
   border: none;
   background: rgba(255, 255, 255, 0.18);
-  color: #06230a;
+  color: #330507;
   width: 40px;
   height: 40px;
   border-radius: 999px;
@@ -126,7 +126,7 @@
 
 .day-note {
   margin: 0;
-  color: rgba(6, 35, 10, 0.7);
+  color: rgba(77, 8, 12, 0.7);
   font-size: 0.9rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -427,7 +427,7 @@
   border-radius: 50%;
   border: none;
   background: var(--accent);
-  color: #041905;
+  color: #330507;
   font-size: 1.3rem;
   font-weight: 600;
   cursor: pointer;
@@ -512,8 +512,8 @@
 }
 
 .history-item.active {
-  border-color: rgba(66, 242, 105, 0.6);
-  background: rgba(66, 242, 105, 0.08);
+  border-color: rgba(255, 91, 91, 0.6);
+  background: rgba(255, 91, 91, 0.12);
 }
 
 .history-item strong {
@@ -582,7 +582,7 @@
 }
 
 .option-button.active {
-  background: rgba(66, 242, 105, 0.15);
-  border-color: rgba(66, 242, 105, 0.3);
+  background: rgba(255, 91, 91, 0.15);
+  border-color: rgba(255, 91, 91, 0.35);
   color: var(--accent);
 }

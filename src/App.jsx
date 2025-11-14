@@ -86,6 +86,7 @@ const TRANSLATIONS = {
     settingsThemeLight: 'Hell',
     settingsThemeDark: 'Dunkel',
     settingsClose: 'Schließen',
+    apiKeyLocalInfo: 'Dein OpenAI Key wird ausschließlich verschlüsselt auf diesem Gerät gespeichert.',
   },
   en: {
     today: 'Today',
@@ -126,6 +127,7 @@ const TRANSLATIONS = {
     settingsThemeLight: 'Light',
     settingsThemeDark: 'Dark',
     settingsClose: 'Close',
+    apiKeyLocalInfo: 'Your OpenAI key is stored only on this device.',
   },
 }
 
@@ -446,6 +448,7 @@ function App() {
         }
 
         setApiKey(trimmed)
+        setInputValue('')
         appendMessage(todayKey, {
           id: createId(),
           role: 'assistant',
@@ -609,7 +612,7 @@ function App() {
               <p>{t('introBody')}</p>
             </div>
           )}
-          {activeDay.messages.length === 0 && (
+          {activeDay.messages.length === 0 && apiKey && (
             <div className="chat-empty">
               <p>{t('emptyTitle')}</p>
               <small>{t('emptySubtitle')}</small>
@@ -671,6 +674,7 @@ function App() {
             <div className="setup-hint">
               <p>{t('setupIntro')}</p>
               <p>{t('setupRequestKey')}</p>
+              <small>{t('apiKeyLocalInfo')}</small>
             </div>
           )}
         </main>
