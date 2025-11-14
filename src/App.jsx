@@ -60,8 +60,6 @@ const TRANSLATIONS = {
     archiveBack: 'Zurück zu Heute',
     historyTitle: 'Chat-Verlauf',
     historyMessagesLabel: 'Nachrichten',
-    historyApiLabel: 'OpenAI API Key',
-    historyApiClear: 'API Key entfernen',
     hintAsk: 'Nachfrage',
     hintSetting: 'Einstellung gespeichert',
     photoPickerLabel: 'Foto hinzufügen',
@@ -77,8 +75,15 @@ const TRANSLATIONS = {
     localeToggleLabel: 'Sprache wechseln',
     messageLabelActivate: 'Kalorieneintrag aktivieren',
     messageLabelDeactivate: 'Kalorieneintrag deaktivieren',
-    themeToggleLabelDark: 'Helles Theme aktivieren',
-    themeToggleLabelLight: 'Dunkles Theme aktivieren',
+    settingsButtonLabel: 'Einstellungen öffnen',
+    settingsTitle: 'Einstellungen',
+    settingsApiLabel: 'OpenAI API Key',
+    settingsApiClear: 'API Key entfernen',
+    settingsLanguageLabel: 'Sprache',
+    settingsThemeLabel: 'Theme',
+    settingsThemeLight: 'Hell',
+    settingsThemeDark: 'Dunkel',
+    settingsClose: 'Schließen',
   },
   en: {
     today: 'Today',
@@ -95,8 +100,6 @@ const TRANSLATIONS = {
     archiveBack: 'Back to Today',
     historyTitle: 'Chat history',
     historyMessagesLabel: 'messages',
-    historyApiLabel: 'OpenAI API Key',
-    historyApiClear: 'Remove API Key',
     hintAsk: 'Follow-up',
     hintSetting: 'Setting saved',
     photoPickerLabel: 'Add photo',
@@ -110,8 +113,15 @@ const TRANSLATIONS = {
     localeToggleLabel: 'Toggle language',
     messageLabelActivate: 'Enable calorie entry',
     messageLabelDeactivate: 'Disable calorie entry',
-    themeToggleLabelDark: 'Switch to light theme',
-    themeToggleLabelLight: 'Switch to dark theme',
+    settingsButtonLabel: 'Open settings',
+    settingsTitle: 'Settings',
+    settingsApiLabel: 'OpenAI API Key',
+    settingsApiClear: 'Remove API Key',
+    settingsLanguageLabel: 'Language',
+    settingsThemeLabel: 'Theme',
+    settingsThemeLight: 'Light',
+    settingsThemeDark: 'Dark',
+    settingsClose: 'Close',
   },
 }
 
@@ -303,6 +313,7 @@ function App() {
   const [inputValue, setInputValue] = useState('')
   const [imageDraft, setImageDraft] = useState(null)
   const [showHistory, setShowHistory] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
   const [isSending, setIsSending] = useState(false)
   const fileInputRef = useRef(null)
   const t = (key) => TRANSLATIONS[locale]?.[key] ?? TRANSLATIONS[FALLBACK_LOCALE][key] ?? key
@@ -361,8 +372,16 @@ function App() {
 
   const isViewingArchive = activeDayId !== todayKey
   const canSend = Boolean(inputValue.trim() || imageDraft)
-  const toggleLocale = () => setLocale((prev) => (prev === 'de' ? 'en' : 'de'))
-  const toggleTheme = () => setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'))
+  const selectLocale = (nextLocale) => {
+    if (SUPPORTED_LOCALES.includes(nextLocale)) {
+      setLocale(nextLocale)
+    }
+  }
+  const selectTheme = (nextTheme) => {
+    if (THEMES.includes(nextTheme)) {
+      setTheme(nextTheme)
+    }
+  }
 
   const appendMessage = (dayKey, message) => {
     setHistory((prev) => {
@@ -545,21 +564,13 @@ function App() {
               </button>
               <button
                 type="button"
-                className="language-button"
-                onClick={toggleLocale}
-                aria-label={t('localeToggleLabel')}
-              >
-                {locale.toUpperCase()}
-              </button>
-              <button
-                type="button"
-                className="theme-button"
-                onClick={toggleTheme}
-                aria-label={theme === 'dark' ? t('themeToggleLabelDark') : t('themeToggleLabelLight')}
-                title={theme === 'dark' ? t('themeToggleLabelDark') : t('themeToggleLabelLight')}
+                className="settings-button"
+                onClick={() => setShowSettings(true)}
+                aria-label={t('settingsButtonLabel')}
+                title={t('settingsButtonLabel')}
               >
                 <span className="icon-glyph" aria-hidden="true">
-                  {theme === 'dark' ? 'light_mode' : 'dark_mode'}
+                  settings
                 </span>
               </button>
             </div>
@@ -701,9 +712,9 @@ function App() {
       </div>
 
       {showHistory && (
-        <div className="history-overlay" onClick={() => setShowHistory(false)}>
-          <div className="history-panel" onClick={(event) => event.stopPropagation()}>
-            <div className="history-header">
+        <div className="modal-overlay" onClick={() => setShowHistory(false)}>
+          <div className="modal-panel history-panel" onClick={(event) => event.stopPropagation()}>
+            <div className="modal-header">
               <h3>{t('historyTitle')}</h3>
               <button type="button" onClick={() => setShowHistory(false)}>
                 ×
@@ -735,19 +746,71 @@ function App() {
                 </li>
               ))}
             </ul>
+          </div>
+        </div>
+      )}
 
-            <div className="history-settings">
-              <label htmlFor="api-key-input">{t('historyApiLabel')}</label>
+      {showSettings && (
+        <div className="modal-overlay" onClick={() => setShowSettings(false)}>
+          <div className="modal-panel settings-panel" onClick={(event) => event.stopPropagation()}>
+            <div className="modal-header">
+              <h3>{t('settingsTitle')}</h3>
+              <button type="button" onClick={() => setShowSettings(false)}>
+                ×
+              </button>
+            </div>
+
+            <div className="settings-section">
+              <label htmlFor="settings-api-key">{t('settingsApiLabel')}</label>
               <input
-                id="api-key-input"
+                id="settings-api-key"
                 type="password"
                 placeholder="sk-..."
                 value={apiKey}
                 onChange={(event) => setApiKey(event.target.value)}
               />
               <button type="button" onClick={() => setApiKey('')}>
-                {t('historyApiClear')}
+                {t('settingsApiClear')}
               </button>
+            </div>
+
+            <div className="settings-section">
+              <span>{t('settingsLanguageLabel')}</span>
+              <div className="option-group">
+                {SUPPORTED_LOCALES.map((lng) => (
+                  <button
+                    key={lng}
+                    type="button"
+                    className={`option-button ${locale === lng ? 'active' : ''}`}
+                    onClick={() => selectLocale(lng)}
+                    aria-pressed={locale === lng}
+                  >
+                    {lng.toUpperCase()}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="settings-section">
+              <span>{t('settingsThemeLabel')}</span>
+              <div className="option-group">
+                <button
+                  type="button"
+                  className={`option-button ${theme === 'dark' ? 'active' : ''}`}
+                  onClick={() => selectTheme('dark')}
+                  aria-pressed={theme === 'dark'}
+                >
+                  {t('settingsThemeDark')}
+                </button>
+                <button
+                  type="button"
+                  className={`option-button ${theme === 'light' ? 'active' : ''}`}
+                  onClick={() => selectTheme('light')}
+                  aria-pressed={theme === 'light'}
+                >
+                  {t('settingsThemeLight')}
+                </button>
+              </div>
             </div>
           </div>
         </div>

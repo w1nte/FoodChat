@@ -19,3 +19,15 @@ npm run dev
 ```
 
 Use the UI to provide your OpenAI API key (stored locally), then chat about your meals. Remember: this project is vibe coded **only**—no rigid spec, just the feels. Customize, remix, or extend as you like.
+
+## Concept: securing the API key in localStorage
+
+The app currently stores the API key locally so FoodChat can work offline, but browsers do not offer true secure storage by default. A pragmatic hardening plan:
+
+1. **Passphrase gate** – Ask the user for a passphrase on first launch. Derive an AES key with PBKDF2 (`SubtleCrypto.importKey` + `deriveKey`) using a random salt stored alongside the ciphertext.
+2. **Encrypt before persisting** – Encrypt the API key with AES-GCM using that derived key. Save only `{ salt, iv, ciphertext }` in localStorage; the derived CryptoKey lives only in memory.
+3. **Unlock per session** – On reload, request the passphrase, derive the key again, and decrypt. Keep the plaintext API key in memory only, wiping it (and revoking references) whenever the tab is closed or after a timeout.
+4. **Optional biometrics** – Where WebAuthn/passkeys are available, let the user replace the passphrase with a platform authenticator so the encryption key is unwrapped only after a biometric assertion.
+5. **Future hooks** – Expose a `provideApiKey` hook so native wrappers or password managers can inject the API key from a more secure channel instead of localStorage.
+
+This design keeps the encryption secret under the user's control and avoids leaving the plaintext API key on disk, while staying 100% client-side to preserve the offline vibe.

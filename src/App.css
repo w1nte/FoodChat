@@ -111,18 +111,7 @@
   cursor: pointer;
 }
 
-.language-button {
-  border: none;
-  background: rgba(255, 255, 255, 0.18);
-  color: #06230a;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  padding: 0.4rem 0.9rem;
-  border-radius: 999px;
-  cursor: pointer;
-}
-
-.theme-button {
+.settings-button {
   border: none;
   background: rgba(255, 255, 255, 0.18);
   color: #06230a;
@@ -435,7 +424,7 @@
   transform: translateY(-2px);
 }
 
-.history-overlay {
+.modal-overlay {
   position: fixed;
   inset: 0;
   background: var(--overlay-bg);
@@ -445,7 +434,7 @@
   padding: 1rem;
 }
 
-.history-panel {
+.modal-panel {
   width: min(380px, 100%);
   background: var(--bg-panel);
   border-radius: 24px;
@@ -456,13 +445,13 @@
   gap: 1rem;
 }
 
-.history-header {
+.modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.history-header button {
+.modal-header button {
   border: none;
   background: rgba(255, 255, 255, 0.08);
   color: var(--text-primary);
@@ -471,6 +460,10 @@
   border-radius: 999px;
   cursor: pointer;
   font-size: 1.25rem;
+}
+
+.history-panel {
+  width: min(420px, 100%);
 }
 
 .history-list {
@@ -518,27 +511,59 @@
   font-weight: 600;
 }
 
-.history-settings {
+.settings-panel {
+  width: min(420px, 100%);
+}
+
+.settings-section {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  padding-top: 0.5rem;
-  border-top: 1px solid var(--border-soft);
 }
 
-.history-settings input {
+.settings-section label,
+.settings-section span {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.settings-section input {
   border-radius: 12px;
   border: 1px solid var(--border-soft);
+  padding: 0.6rem 0.85rem;
   background: var(--bg-bubble);
-  padding: 0.65rem 0.9rem;
   color: var(--text-primary);
 }
 
-.history-settings button {
+.settings-section > button {
+  align-self: flex-start;
   border: none;
   border-radius: 10px;
-  padding: 0.5rem 0.75rem;
+  padding: 0.45rem 0.85rem;
   background: rgba(255, 255, 255, 0.08);
   color: var(--text-primary);
   cursor: pointer;
+}
+
+.option-group {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.option-button {
+  border: 1px solid var(--border-soft);
+  border-radius: 999px;
+  padding: 0.4rem 0.9rem;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.option-button.active {
+  background: rgba(66, 242, 105, 0.15);
+  border-color: rgba(66, 242, 105, 0.3);
+  color: var(--accent);
 }
