@@ -625,3 +625,50 @@
   background: var(--accent);
   box-shadow: 0 4px 12px rgba(255, 91, 91, 0.45);
 }
+.bubble-loading {
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-muted);
+}
+
+.dot-pulse {
+  width: 32px;
+  height: 8px;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dot-pulse::before,
+.dot-pulse::after,
+.dot-pulse span {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  opacity: 0.4;
+  animation: pulse 900ms infinite ease-in-out;
+}
+
+.dot-pulse::before {
+  animation-delay: -300ms;
+}
+
+.dot-pulse::after {
+  animation-delay: 300ms;
+}
+
+@keyframes pulse {
+  0%,
+  80%,
+  100% {
+    transform: scale(0.6);
+    opacity: 0.3;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}

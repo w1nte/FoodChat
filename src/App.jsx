@@ -47,7 +47,7 @@ Use only the supplied information.`,
 
 const TRANSLATIONS = {
   de: {
-    today: 'Historie',
+    today: 'Heute',
     todayUpper: 'HEUTE',
     totalToday: 'Gesamt heute',
     emptyTitle: 'Noch keine Einträge für diesen Tag.',
@@ -99,7 +99,7 @@ const TRANSLATIONS = {
     rememberPassphrasePrompt: 'Bitte gib dein aktuelles Passwort ein, damit ich es speichern kann:',
   },
   en: {
-    today: 'History',
+    today: 'Today',
     todayUpper: 'TODAY',
     totalToday: 'Total today',
     emptyTitle: 'No entries for this day yet.',
@@ -572,6 +572,15 @@ function App() {
     container.scrollTop = container.scrollHeight
   }, [activeDayId])
 
+  useEffect(() => {
+    if (!isSending) return
+    const container = chatBodyRef.current
+    if (!container) return
+    requestAnimationFrame(() => {
+      container.scrollTop = container.scrollHeight
+    })
+  }, [isSending])
+
   const { timeFormatter, longDayFormatter, shortDayFormatter, numberFormatter } = useMemo(
     () => createFormatters(locale),
     [locale],
@@ -903,6 +912,14 @@ function App() {
                 </li>
               )
             })}
+            {isSending && apiKey && (
+              <li className="message message-assistant pending">
+                <div className="bubble bubble-loading">
+                  <span className="dot-pulse" aria-hidden="true"></span>
+                  <span>{locale === 'de' ? 'Denke nach...' : 'Thinking...'}</span>
+                </div>
+              </li>
+            )}
           </ul>
 
           {!apiKey && (
