@@ -4,10 +4,13 @@ import './App.css'
 const API_KEY_STORAGE_KEY = 'foodchat_api_key'
 const HISTORY_STORAGE_KEY = 'foodchat_history'
 const LOCALE_STORAGE_KEY = 'foodchat_locale'
+const THEME_STORAGE_KEY = 'foodchat_theme'
 const OPENAI_ENDPOINT = 'https://api.openai.com/v1/chat/completions'
 const OPENAI_MODEL = 'gpt-4o-mini'
 const SUPPORTED_LOCALES = ['de', 'en']
 const FALLBACK_LOCALE = 'de'
+const THEMES = ['dark', 'light']
+const DEFAULT_THEME = 'dark'
 const LOCALE_TAG = {
   de: 'de-DE',
   en: 'en-US',
@@ -74,6 +77,8 @@ const TRANSLATIONS = {
     localeToggleLabel: 'Sprache wechseln',
     messageLabelActivate: 'Kalorieneintrag aktivieren',
     messageLabelDeactivate: 'Kalorieneintrag deaktivieren',
+    themeToggleLabelDark: 'Helles Theme aktivieren',
+    themeToggleLabelLight: 'Dunkles Theme aktivieren',
   },
   en: {
     today: 'Today',
@@ -105,6 +110,8 @@ const TRANSLATIONS = {
     localeToggleLabel: 'Toggle language',
     messageLabelActivate: 'Enable calorie entry',
     messageLabelDeactivate: 'Disable calorie entry',
+    themeToggleLabelDark: 'Switch to light theme',
+    themeToggleLabelLight: 'Switch to dark theme',
   },
 }
 
@@ -154,6 +161,12 @@ const readStoredLocale = () => {
   if (typeof window === 'undefined') return FALLBACK_LOCALE
   const stored = window.localStorage.getItem(LOCALE_STORAGE_KEY)
   return SUPPORTED_LOCALES.includes(stored) ? stored : FALLBACK_LOCALE
+}
+
+const readStoredTheme = () => {
+  if (typeof window === 'undefined') return DEFAULT_THEME
+  const stored = window.localStorage.getItem(THEME_STORAGE_KEY)
+  return THEMES.includes(stored) ? stored : DEFAULT_THEME
 }
 
 const readStoredHistory = () => {
@@ -277,6 +290,7 @@ const getSystemPrompt = (locale) => SYSTEM_PROMPTS[locale] ?? SYSTEM_PROMPTS[FAL
 function App() {
   const todayKey = getTodayKey()
   const [locale, setLocale] = useState(() => readStoredLocale())
+  const [theme, setTheme] = useState(() => readStoredTheme())
   const [apiKey, setApiKey] = useState(() => readStoredApiKey())
   const [history, setHistory] = useState(() => {
     const stored = readStoredHistory()
@@ -312,6 +326,12 @@ function App() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return
+    window.localStorage.setItem(THEME_STORAGE_KEY, theme)
+    document.documentElement.dataset.theme = theme
+  }, [theme])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
     window.localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(history))
   }, [history])
 
@@ -342,6 +362,7 @@ function App() {
   const isViewingArchive = activeDayId !== todayKey
   const canSend = Boolean(inputValue.trim() || imageDraft)
   const toggleLocale = () => setLocale((prev) => (prev === 'de' ? 'en' : 'de'))
+  const toggleTheme = () => setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'))
 
   const appendMessage = (dayKey, message) => {
     setHistory((prev) => {
@@ -529,6 +550,17 @@ function App() {
                 aria-label={t('localeToggleLabel')}
               >
                 {locale.toUpperCase()}
+              </button>
+              <button
+                type="button"
+                className="theme-button"
+                onClick={toggleTheme}
+                aria-label={theme === 'dark' ? t('themeToggleLabelDark') : t('themeToggleLabelLight')}
+                title={theme === 'dark' ? t('themeToggleLabelDark') : t('themeToggleLabelLight')}
+              >
+                <span className="icon-glyph" aria-hidden="true">
+                  {theme === 'dark' ? 'light_mode' : 'dark_mode'}
+                </span>
               </button>
             </div>
             <div className="header-summary">

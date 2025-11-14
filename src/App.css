@@ -1,4 +1,5 @@
 :root {
+  color-scheme: dark;
   --bg-primary: #06080b;
   --bg-panel: #11141a;
   --bg-bubble: #1b212c;
@@ -9,6 +10,38 @@
   --text-muted: #8f9aae;
   --border-soft: rgba(255, 255, 255, 0.05);
   --shadow-strong: 0 30px 45px rgba(3, 7, 12, 0.65);
+  --page-background: radial-gradient(circle at top, rgba(66, 242, 105, 0.28), transparent 45%),
+    #06080b;
+  --surface-muted: rgba(18, 22, 30, 0.9);
+  --surface-muted-border: rgba(255, 255, 255, 0.07);
+  --composer-bg: rgba(6, 8, 11, 0.95);
+  --overlay-bg: rgba(3, 6, 8, 0.7);
+  --archive-bg: rgba(17, 20, 26, 0.9);
+  --chip-bg: rgba(255, 255, 255, 0.05);
+  --composer-input-bg: rgba(10, 12, 16, 0.75);
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+  --bg-primary: #f6f8fc;
+  --bg-panel: #ffffff;
+  --bg-bubble: #eef1f7;
+  --bg-bubble-user: #fbfbfd;
+  --accent: #1c9c45;
+  --accent-dark: #0b6126;
+  --text-primary: #0f172a;
+  --text-muted: #5e6475;
+  --border-soft: rgba(15, 23, 42, 0.08);
+  --shadow-strong: 0 30px 45px rgba(15, 23, 42, 0.08);
+  --page-background: radial-gradient(circle at top, rgba(43, 201, 99, 0.48), transparent 45%),
+    #dddddd;
+  --surface-muted: rgba(243, 245, 249, 0.95);
+  --surface-muted-border: rgba(15, 23, 42, 0.1);
+  --composer-bg: rgba(248, 249, 253, 0.95);
+  --overlay-bg: rgba(9, 12, 20, 0.35);
+  --archive-bg: rgba(15, 18, 27, 0.06);
+  --chip-bg: rgba(15, 23, 42, 0.05);
+  --composer-input-bg: rgba(15, 23, 42, 0.04);
 }
 
 .icon-glyph {
@@ -25,7 +58,7 @@
 
 .app-wrapper {
   min-height: 100vh;
-  background: radial-gradient(circle at top, rgba(66, 242, 105, 0.18), transparent 45%), var(--bg-primary);
+  background: var(--page-background);
   color: var(--text-primary);
   font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
 }
@@ -36,7 +69,6 @@
   height: 100vh;
   display: flex;
   flex-direction: column;
-  background: var(--bg-panel);
   border-radius: 0;
   box-shadow: none;
   overflow: hidden;
@@ -53,7 +85,6 @@
   flex-direction: column;
   gap: 0.35rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.15);
-  box-shadow: 0 12px 30px rgba(6, 30, 13, 0.45);
 }
 
 .header-bar {
@@ -91,6 +122,19 @@
   cursor: pointer;
 }
 
+.theme-button {
+  border: none;
+  background: rgba(255, 255, 255, 0.18);
+  color: #06230a;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
 .day-note {
   margin: 0;
   color: rgba(6, 35, 10, 0.7);
@@ -122,7 +166,6 @@
   gap: 1rem;
   padding: 1rem 1rem 6rem;
   overflow-y: auto;
-  background: linear-gradient(180deg, rgba(10, 15, 23, 0.75), var(--bg-panel));
   scrollbar-gutter: stable;
   scroll-behavior: smooth;
 }
@@ -131,8 +174,8 @@
   margin-top: 1rem;
   padding: 1.25rem;
   border-radius: 18px;
-  background: rgba(18, 22, 30, 0.9);
-  border: 1px dashed rgba(255, 255, 255, 0.07);
+  background: var(--surface-muted);
+  border: 1px dashed var(--surface-muted-border);
   text-align: center;
   color: var(--text-muted);
 }
@@ -242,8 +285,8 @@
   padding: 0.25rem 0.75rem;
   font-size: 0.8rem;
   cursor: pointer;
-  background: rgba(255, 255, 255, 0.08);
   color: var(--text-primary);
+  background: none;
 }
 
 .nutrition-toggle:hover {
@@ -272,7 +315,7 @@
   gap: 0.85rem;
   padding: 0.85rem 1rem;
   margin: 0 1.5rem;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--chip-bg);
   border-radius: 18px;
 }
 
@@ -295,8 +338,8 @@
   margin: 0 1.5rem 0.5rem;
   padding: 0.75rem 1rem;
   border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(17, 20, 26, 0.9);
+  border: 1px solid var(--border-soft);
+  background: var(--archive-bg);
   color: var(--text-muted);
   font-size: 0.85rem;
   display: flex;
@@ -319,9 +362,9 @@
   position: sticky;
   bottom: 0;
   z-index: 5;
-  background: rgba(6, 8, 11, 0.95);
+  background: var(--composer-bg);
   backdrop-filter: blur(12px);
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid var(--border-soft);
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -331,9 +374,8 @@
 .icon-button {
   width: 52px;
   height: 52px;
-  line-height: 52px;
   border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border-soft);
   background: rgba(255, 255, 255, 0.05);
   display: inline-flex;
   align-items: center;
@@ -360,8 +402,8 @@
   padding: 0.9rem 1.2rem;
   height: 52px;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  background: rgba(10, 12, 16, 0.75);
+  border: 1px solid var(--border-soft);
+  background: var(--composer-input-bg);
   color: var(--text-primary);
   font-size: 1rem;
   min-width: 0;
@@ -396,7 +438,7 @@
 .history-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(3, 6, 8, 0.7);
+  background: var(--overlay-bg);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -405,7 +447,7 @@
 
 .history-panel {
   width: min(380px, 100%);
-  background: #0c0f14;
+  background: var(--bg-panel);
   border-radius: 24px;
   padding: 1.5rem;
   box-shadow: 0 25px 55px rgba(0, 0, 0, 0.65);
@@ -444,7 +486,7 @@
 
 .history-item {
   width: 100%;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border-soft);
   border-radius: 16px;
   background: rgba(255, 255, 255, 0.02);
   padding: 0.9rem 1rem;
@@ -481,13 +523,13 @@
   flex-direction: column;
   gap: 0.5rem;
   padding-top: 0.5rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  border-top: 1px solid var(--border-soft);
 }
 
 .history-settings input {
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(8, 10, 15, 0.9);
+  border: 1px solid var(--border-soft);
+  background: var(--bg-bubble);
   padding: 0.65rem 0.9rem;
   color: var(--text-primary);
 }
