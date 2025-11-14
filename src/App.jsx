@@ -495,16 +495,17 @@ function App() {
   }
 
   const handleScroll = (event) => {
-    const current = event.currentTarget.scrollTop
+    const current = event.currentTarget.scrollHeight - event.currentTarget.scrollTop - event.currentTarget.offsetHeight
+    console.log(current);
     const last = lastScrollTop.current
     if (Math.abs(current - last) < 6) return
     if (current > last && current > 24) {
-      setHeaderCollapsed(false)
+      setHeaderCollapsed(true)
     } else if (current < last) {
-      setHeaderCollapsed(true)
+      setHeaderCollapsed(false)
     }
-    if (current <= 4) {
-      setHeaderCollapsed(true)
+    if (current <= 200) {
+      setHeaderCollapsed(false)
     }
     lastScrollTop.current = current
   }
