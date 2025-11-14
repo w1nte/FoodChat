@@ -3,8 +3,8 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
-export default defineConfig({
-  base: './',
+export default defineConfig(({ mode }) => ({
+  base: mode === 'production' ? '/foodchat' : '/',
   plugins: [
     react(),
     VitePWA({
@@ -13,12 +13,12 @@ export default defineConfig({
       manifest: {
         name: 'FoodChat',
         short_name: 'FoodChat',
-        description: 'Meal planning notes and inspiration that work offline.',
-        theme_color: '#1a8917',
-        background_color: '#071007',
+        description: 'FoodChat - chat with your calories.',
+        theme_color: '#e43c42',
+        background_color: '#100a07ff',
         display: 'standalone',
         lang: 'en',
-        start_url: './',
+        start_url: '/foodchat',
         icons: [
           {
             src: 'pwa-192x192.png',
@@ -46,4 +46,4 @@ export default defineConfig({
       },
     }),
   ],
-})
+}))

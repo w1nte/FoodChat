@@ -47,7 +47,7 @@ Use only the supplied information.`,
 
 const TRANSLATIONS = {
   de: {
-    today: 'Heute',
+    today: 'Historie',
     todayUpper: 'HEUTE',
     totalToday: 'Gesamt heute',
     emptyTitle: 'Noch keine Einträge für diesen Tag.',
@@ -99,7 +99,7 @@ const TRANSLATIONS = {
     rememberPassphrasePrompt: 'Bitte gib dein aktuelles Passwort ein, damit ich es speichern kann:',
   },
   en: {
-    today: 'Today',
+    today: 'History',
     todayUpper: 'TODAY',
     totalToday: 'Total today',
     emptyTitle: 'No entries for this day yet.',
