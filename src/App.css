@@ -21,6 +21,7 @@
   --composer-input-bg: rgba(32, 6, 8, 0.75);
   --toggle-bg: rgba(0, 0, 0, 0.8);
   --chat-header-bg: linear-gradient(120deg, rgba(255, 94, 104, 0.1), rgba(167, 2, 15, 0.5));
+  --chat-header-color: white;
 }
 
 :root[data-theme='light'] {
@@ -46,6 +47,7 @@
   --composer-input-bg: rgba(129, 19, 25, 0.05);
   --toggle-bg: rgba(0, 0, 0, 0.2);
   --chat-header-bg: linear-gradient(120deg, rgba(255, 94, 104, 0.7), rgba(167, 2, 15, 0.5));
+  --chat-header-color: #130203;
 }
 
 .icon-glyph {
@@ -84,7 +86,7 @@
   z-index: 5;
   background: var(--chat-header-bg);
   padding: 0.75rem 0.85rem;
-  color: #130203;
+  color: var(--chat-header-color);
   display: flex;
   transition: padding 150ms ease, opacity 150ms ease;
 }
