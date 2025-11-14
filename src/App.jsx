@@ -357,7 +357,7 @@ function App() {
     const container = chatBodyRef.current
     if (!container) return
     container.scrollTop = container.scrollHeight
-  }, [activeDayId, activeDay.messages.length])
+  }, [activeDayId])
 
   const { timeFormatter, longDayFormatter, shortDayFormatter, numberFormatter } = useMemo(
     () => createFormatters(locale),
@@ -429,12 +429,6 @@ function App() {
 
     const payloadImage = imageDraft
 
-    setInputValue('')
-    setImageDraft(null)
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ''
-    }
-
     setIsSending(true)
 
     try {
@@ -475,6 +469,12 @@ function App() {
       }
 
       appendMessage(todayKey, userMessage)
+      requestAnimationFrame(() => {
+        const container = chatBodyRef.current
+        if (container) {
+          container.scrollTop = container.scrollHeight
+        }
+      })
 
       const preparedText = trimmed || (payloadImage ? t('photoFallback') : '')
       const contentPayload = buildUserContent(preparedText, payloadImage)
@@ -533,6 +533,12 @@ function App() {
       }
 
       appendMessage(todayKey, assistantMessage)
+      requestAnimationFrame(() => {
+        const container = chatBodyRef.current
+        if (container) {
+          container.scrollTop = container.scrollHeight
+        }
+      })
     } catch (error) {
       console.error('OpenAI request failed', error)
       appendMessage(todayKey, {
