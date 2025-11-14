@@ -53,7 +53,7 @@ const TRANSLATIONS = {
   de: {
     today: 'Heute',
     todayUpper: 'HEUTE',
-    totalToday: 'Gesamt heute',
+    totalToday: 'Gesamt',
     emptyTitle: 'Noch keine Einträge für diesen Tag.',
     emptySubtitle: 'Tippe eine Mahlzeit ein oder lade ein Foto hoch.',
     setupIntro:
@@ -107,7 +107,7 @@ const TRANSLATIONS = {
   en: {
     today: 'Today',
     todayUpper: 'TODAY',
-    totalToday: 'Total today',
+    totalToday: 'Total',
     emptyTitle: 'No entries for this day yet.',
     emptySubtitle: 'Type a meal or upload a photo to get started.',
     setupIntro: 'Welcome! Before you can track your calories, I need an API key for ChatGPT from you.',
@@ -480,9 +480,11 @@ function App() {
   const [showHistory, setShowHistory] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [isSending, setIsSending] = useState(false)
+  const [headerCollapsed, setHeaderCollapsed] = useState(false)
   const fileInputRef = useRef(null)
   const chatBodyRef = useRef(null)
   const unlockAttemptedRef = useRef(false)
+  const lastScrollTop = useRef(0)
   const t = (key) => TRANSLATIONS[locale]?.[key] ?? TRANSLATIONS[FALLBACK_LOCALE][key] ?? key
   const clearComposer = () => {
     setInputValue('')
@@ -490,6 +492,21 @@ function App() {
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
     }
+  }
+
+  const handleScroll = (event) => {
+    const current = event.currentTarget.scrollTop
+    const last = lastScrollTop.current
+    if (Math.abs(current - last) < 6) return
+    if (current > last && current > 24) {
+      setHeaderCollapsed(false)
+    } else if (current < last) {
+      setHeaderCollapsed(true)
+    }
+    if (current <= 4) {
+      setHeaderCollapsed(true)
+    }
+    lastScrollTop.current = current
   }
 
   const persistEncryptedKey = useCallback(
@@ -869,43 +886,40 @@ function App() {
   return (
     <div className="app-wrapper">
       <div className="chat-shell">
-        <header className="chat-header">
+        <header className={`chat-header ${headerCollapsed ? 'collapsed' : ''}`}>
           <div className="header-bar">
-            <div className="header-actions">
-              <button className="day-button" onClick={() => setShowHistory(true)}>
-                {t('today')}
-              </button>
-              <button
-                type="button"
-                className="settings-button"
-                onClick={() => setShowSettings(true)}
-                aria-label={t('settingsButtonLabel')}
-                title={t('settingsButtonLabel')}
-              >
-                <span className="icon-glyph" aria-hidden="true">
-                  settings
-                </span>
-              </button>
-            </div>
+            <button className="day-button" onClick={() => setShowHistory(true)}>
+              {t('today')}
+            </button>
             <div className="header-summary">
-              <span>{t('totalToday')}</span>
-              <strong>
-                {numberFormatter.format(todaysCalories)} kcal
-              </strong>
+              <div className="header-calories">
+                <small>{t('totalToday')}:</small>
+                <strong>{numberFormatter.format(todaysCalories)} kcal</strong>
+              </div>
               <div className="header-macros">
                 <span>
-                  {t('proteinLabel')}: {numberFormatter.format(todaysProtein)} g
+                  {t('proteinLabel')}: <strong>{numberFormatter.format(todaysProtein)} g</strong>
                 </span>
                 <span>
-                  {t('fatLabel')}: {numberFormatter.format(todaysFat)} g
+                  {t('fatLabel')}: <strong>{numberFormatter.format(todaysFat)} g</strong>
                 </span>
               </div>
             </div>
+            <button
+              type="button"
+              className="settings-button"
+              onClick={() => setShowSettings(true)}
+              aria-label={t('settingsButtonLabel')}
+              title={t('settingsButtonLabel')}
+            >
+              <span className="icon-glyph" aria-hidden="true">
+                settings
+              </span>
+            </button>
           </div>
-          <p className="day-note">{activeDayLabel}</p>
         </header>
 
-        <main className="chat-body" ref={chatBodyRef}>
+        <main className="chat-body" ref={chatBodyRef} onScroll={handleScroll}>
           {!apiKey && (
             <div className="intro-card">
               <h3>{t('introTitle')}</h3>
