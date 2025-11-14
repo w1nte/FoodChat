@@ -63,6 +63,12 @@
   gap: 1rem;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
 .day-button {
   border: none;
   background: rgba(255, 255, 255, 0.25);
@@ -70,6 +76,17 @@
   font-weight: 600;
   letter-spacing: 0.02em;
   padding: 0.45rem 1.1rem;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.language-button {
+  border: none;
+  background: rgba(255, 255, 255, 0.18);
+  color: #06230a;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  padding: 0.4rem 0.9rem;
   border-radius: 999px;
   cursor: pointer;
 }

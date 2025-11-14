@@ -3,9 +3,18 @@ import './App.css'
 
 const API_KEY_STORAGE_KEY = 'foodchat_api_key'
 const HISTORY_STORAGE_KEY = 'foodchat_history'
+const LOCALE_STORAGE_KEY = 'foodchat_locale'
 const OPENAI_ENDPOINT = 'https://api.openai.com/v1/chat/completions'
 const OPENAI_MODEL = 'gpt-4o-mini'
-const SYSTEM_PROMPT = `Du bist FoodChat, ein Assistent für Foto- und Textbeschreibungen von Mahlzeiten.
+const SUPPORTED_LOCALES = ['de', 'en']
+const FALLBACK_LOCALE = 'de'
+const LOCALE_TAG = {
+  de: 'de-DE',
+  en: 'en-US',
+}
+
+const SYSTEM_PROMPTS = {
+  de: `Du bist FoodChat, ein Assistent für Foto- und Textbeschreibungen von Mahlzeiten.
 Antworte ausschließlich als kompaktes JSON-Objekt ohne Erklärungstext oder Markdown.
 Struktur:
 {
@@ -16,16 +25,88 @@ Struktur:
 - "setting": Verwende nur, wenn der aktuelle Nutzer seinen OpenAI Key bestätigt oder ein lokaler Wert aktualisiert werden soll. calories = 0.
 - "nutrition": Schätze Kalorien anhand von Bild und/oder Text. "message" enthält eine kurze Beschreibung samt kcal. calories ist eine positive Ganzzahl.
 - "ask": Nutze dies, wenn mehr Informationen zu Portion, Zutaten oder Zubereitung fehlen. calories = 0.
-Nutze ausschließlich die bereitgestellten Informationen.`
+Nutze ausschließlich die bereitgestellten Informationen.`,
+  en: `You are FoodChat, a nutrition assistant for photo and text descriptions of meals.
+Reply only with a compact JSON object—no explanations or Markdown.
+Structure:
+{
+  "type": "setting" | "nutrition" | "ask",
+  "message": "<your short answer in English>",
+  "calories": <number>
+}
+- "setting": Use only to confirm the API key or change a local setting. calories = 0.
+- "nutrition": Estimate calories based on the provided description or image. "message" should include a short description and kcal. calories is a positive integer.
+- "ask": Use when you need more info about portion size, ingredients, or preparation. calories = 0.
+Use only the supplied information.`,
+}
 
-const TIME_FORMATTER = new Intl.DateTimeFormat('de-DE', { hour: '2-digit', minute: '2-digit' })
-const LONG_DAY_FORMATTER = new Intl.DateTimeFormat('de-DE', {
-  weekday: 'long',
-  day: '2-digit',
-  month: '2-digit',
-})
-const SHORT_DAY_FORMATTER = new Intl.DateTimeFormat('de-DE', { day: '2-digit', month: '2-digit' })
-const NUMBER_FORMATTER = new Intl.NumberFormat('de-DE')
+const TRANSLATIONS = {
+  de: {
+    today: 'Heute',
+    todayUpper: 'HEUTE',
+    totalToday: 'Gesamt heute',
+    emptyTitle: 'Noch keine Einträge für diesen Tag.',
+    emptySubtitle: 'Tippe eine Mahlzeit ein oder lade ein Foto hoch.',
+    setupIntro:
+      'Willkommen, bevor du deine Kalorien tracken kannst, musst du ein paar Daten eingeben.',
+    setupRequestKey: 'Bitte schreibe mir als erstes deinen OpenAI API Key.',
+    placeholderApiKey: 'Dein API Key',
+    placeholderMeal: 'Was hast du gegessen?',
+    removeImage: 'Entfernen',
+    archiveHint: 'Du schaust dir den Verlauf an. Neue Einträge können nur heute erstellt werden.',
+    archiveBack: 'Zurück zu Heute',
+    historyTitle: 'Chat-Verlauf',
+    historyMessagesLabel: 'Nachrichten',
+    historyApiLabel: 'OpenAI API Key',
+    historyApiClear: 'API Key entfernen',
+    hintAsk: 'Nachfrage',
+    hintSetting: 'Einstellung gespeichert',
+    photoPickerLabel: 'Foto hinzufügen',
+    sendButtonLabel: 'Nachricht senden',
+    needApiKey: 'Bitte gib zuerst deinen OpenAI API Key ein.',
+    apiKeySaved: 'Danke! Ich habe den API Key lokal gespeichert. Erzähle mir jetzt von deinem Essen.',
+    missingDescription: 'Beschreibe dein Essen oder lade ein Bild hoch, dann kann ich helfen.',
+    requestFailed:
+      'Ich konnte keine Antwort von OpenAI erhalten. Bitte überprüfe deinen API Key oder versuche es erneut.',
+    fallbackUnreadable:
+      'Ich konnte die Antwort nicht lesen. Beschreibe dein Essen bitte noch einmal.',
+    photoFallback: 'Das folgende Foto zeigt meine Mahlzeit.',
+    localeToggleLabel: 'Sprache wechseln',
+    messageLabelActivate: 'Kalorieneintrag aktivieren',
+    messageLabelDeactivate: 'Kalorieneintrag deaktivieren',
+  },
+  en: {
+    today: 'Today',
+    todayUpper: 'TODAY',
+    totalToday: 'Total today',
+    emptyTitle: 'No entries for this day yet.',
+    emptySubtitle: 'Type a meal or upload a photo to get started.',
+    setupIntro: 'Welcome! Before you can track calories, I need a bit of information.',
+    setupRequestKey: 'Please start by sending me your OpenAI API key.',
+    placeholderApiKey: 'Your API Key',
+    placeholderMeal: 'What did you eat?',
+    removeImage: 'Remove',
+    archiveHint: 'You are viewing history. New entries can only be added today.',
+    archiveBack: 'Back to Today',
+    historyTitle: 'Chat history',
+    historyMessagesLabel: 'messages',
+    historyApiLabel: 'OpenAI API Key',
+    historyApiClear: 'Remove API Key',
+    hintAsk: 'Follow-up',
+    hintSetting: 'Setting saved',
+    photoPickerLabel: 'Add photo',
+    sendButtonLabel: 'Send message',
+    needApiKey: 'Please send your OpenAI API key first.',
+    apiKeySaved: 'Thanks! I stored the API key locally. Tell me about your meal now.',
+    missingDescription: 'Describe your food or upload a picture so I can help.',
+    requestFailed: 'I could not get a response from OpenAI. Check your API key or try again.',
+    fallbackUnreadable: 'I could not read the answer. Please describe your meal again.',
+    photoFallback: 'The following photo shows my meal.',
+    localeToggleLabel: 'Toggle language',
+    messageLabelActivate: 'Enable calorie entry',
+    messageLabelDeactivate: 'Disable calorie entry',
+  },
+}
 
 const getTodayKey = () => new Date().toISOString().slice(0, 10)
 const createEmptyDay = (date) => ({ date, messages: [] })
@@ -50,9 +131,29 @@ const formatDay = (dateId, formatter) => {
   return formatter.format(parsed)
 }
 
+const createFormatters = (locale) => {
+  const tag = LOCALE_TAG[locale] ?? LOCALE_TAG[FALLBACK_LOCALE]
+  return {
+    timeFormatter: new Intl.DateTimeFormat(tag, { hour: '2-digit', minute: '2-digit' }),
+    longDayFormatter: new Intl.DateTimeFormat(tag, {
+      weekday: 'long',
+      day: '2-digit',
+      month: '2-digit',
+    }),
+    shortDayFormatter: new Intl.DateTimeFormat(tag, { day: '2-digit', month: '2-digit' }),
+    numberFormatter: new Intl.NumberFormat(tag),
+  }
+}
+
 const readStoredApiKey = () => {
   if (typeof window === 'undefined') return ''
   return window.localStorage.getItem(API_KEY_STORAGE_KEY) ?? ''
+}
+
+const readStoredLocale = () => {
+  if (typeof window === 'undefined') return FALLBACK_LOCALE
+  const stored = window.localStorage.getItem(LOCALE_STORAGE_KEY)
+  return SUPPORTED_LOCALES.includes(stored) ? stored : FALLBACK_LOCALE
 }
 
 const readStoredHistory = () => {
@@ -90,10 +191,10 @@ const cleanModelText = (text = '') =>
     .replace(/```$/, '')
     .trim()
 
-const parseAssistantPayload = (rawText) => {
+const parseAssistantPayload = (rawText, fallbackMessage) => {
   const fallback = {
     type: 'ask',
-    message: 'Ich konnte die Antwort nicht lesen. Beschreibe dein Essen bitte noch einmal.',
+    message: fallbackMessage,
     calories: 0,
   }
   if (!rawText) return fallback
@@ -171,8 +272,11 @@ const convertMessageToModelTurn = (message) => {
   }
 }
 
+const getSystemPrompt = (locale) => SYSTEM_PROMPTS[locale] ?? SYSTEM_PROMPTS[FALLBACK_LOCALE]
+
 function App() {
   const todayKey = getTodayKey()
+  const [locale, setLocale] = useState(() => readStoredLocale())
   const [apiKey, setApiKey] = useState(() => readStoredApiKey())
   const [history, setHistory] = useState(() => {
     const stored = readStoredHistory()
@@ -187,6 +291,7 @@ function App() {
   const [showHistory, setShowHistory] = useState(false)
   const [isSending, setIsSending] = useState(false)
   const fileInputRef = useRef(null)
+  const t = (key) => TRANSLATIONS[locale]?.[key] ?? TRANSLATIONS[FALLBACK_LOCALE][key] ?? key
 
   useEffect(() => {
     setHistory((prev) => {
@@ -202,14 +307,24 @@ function App() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return
+    window.localStorage.setItem(LOCALE_STORAGE_KEY, locale)
+  }, [locale])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
     window.localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(history))
   }, [history])
+
+  const { timeFormatter, longDayFormatter, shortDayFormatter, numberFormatter } = useMemo(
+    () => createFormatters(locale),
+    [locale],
+  )
 
   const activeDay = history[activeDayId] ?? createEmptyDay(activeDayId)
   const todaysDay = history[todayKey] ?? createEmptyDay(todayKey)
   const todaysCalories = useMemo(() => sumCalories(todaysDay), [todaysDay])
   const activeDayLabel =
-    activeDayId === todayKey ? 'Heute' : formatDay(activeDayId, LONG_DAY_FORMATTER)
+    activeDayId === todayKey ? t('todayUpper') : formatDay(activeDayId, longDayFormatter)
   const historyItems = useMemo(() => {
     const entries = Object.keys(history)
     if (!entries.length) return []
@@ -226,6 +341,7 @@ function App() {
 
   const isViewingArchive = activeDayId !== todayKey
   const canSend = Boolean(inputValue.trim() || imageDraft)
+  const toggleLocale = () => setLocale((prev) => (prev === 'de' ? 'en' : 'de'))
 
   const appendMessage = (dayKey, message) => {
     setHistory((prev) => {
@@ -275,7 +391,7 @@ function App() {
           appendMessage(todayKey, {
             id: createId(),
             role: 'assistant',
-            text: 'Bitte gib zuerst deinen OpenAI API Key ein.',
+            text: t('needApiKey'),
             kind: 'setting',
             calories: 0,
             createdAt: new Date().toISOString(),
@@ -287,7 +403,7 @@ function App() {
         appendMessage(todayKey, {
           id: createId(),
           role: 'assistant',
-          text: 'Danke! Ich habe den API Key lokal gespeichert. Erzähle mir jetzt von deinem Essen.',
+          text: t('apiKeySaved'),
           kind: 'setting',
           calories: 0,
           createdAt: new Date().toISOString(),
@@ -308,14 +424,14 @@ function App() {
 
       appendMessage(todayKey, userMessage)
 
-      const preparedText = trimmed || (payloadImage ? 'Das folgende Foto zeigt meine Mahlzeit.' : '')
+      const preparedText = trimmed || (payloadImage ? t('photoFallback') : '')
       const contentPayload = buildUserContent(preparedText, payloadImage)
 
       if (!contentPayload.length) {
         appendMessage(todayKey, {
           id: createId(),
           role: 'assistant',
-          text: 'Beschreibe dein Essen oder lade ein Bild hoch, dann kann ich helfen.',
+          text: t('missingDescription'),
           kind: 'ask',
           calories: 0,
           createdAt: new Date().toISOString(),
@@ -333,7 +449,7 @@ function App() {
           model: OPENAI_MODEL,
           temperature: 0.2,
           messages: [
-            { role: 'system', content: SYSTEM_PROMPT },
+            { role: 'system', content: getSystemPrompt(locale) },
             ...historyTurns,
             {
               role: 'user',
@@ -350,7 +466,7 @@ function App() {
 
       const result = await response.json()
       const assistantText = extractAssistantContent(result.choices?.[0]?.message)
-      const structured = parseAssistantPayload(assistantText)
+      const structured = parseAssistantPayload(assistantText, t('fallbackUnreadable'))
 
       const assistantMessage = {
         id: createId(),
@@ -370,7 +486,7 @@ function App() {
       appendMessage(todayKey, {
         id: createId(),
         role: 'assistant',
-        text: 'Ich konnte keine Antwort von OpenAI erhalten. Bitte überprüfe deinen API Key oder versuche es erneut.',
+        text: t('requestFailed'),
         kind: 'ask',
         calories: 0,
         createdAt: new Date().toISOString(),
@@ -394,7 +510,7 @@ function App() {
     }
   }
 
-  const placeholder = !apiKey ? 'Your API Key' : 'Was hast du gegessen?'
+  const placeholder = !apiKey ? t('placeholderApiKey') : t('placeholderMeal')
   const composerDisabled = isSending || isViewingArchive
 
   return (
@@ -402,12 +518,24 @@ function App() {
       <div className="chat-shell">
         <header className="chat-header">
           <div className="header-bar">
-            <button className="day-button" onClick={() => setShowHistory(true)}>
-              Heute
-            </button>
+            <div className="header-actions">
+              <button className="day-button" onClick={() => setShowHistory(true)}>
+                {t('today')}
+              </button>
+              <button
+                type="button"
+                className="language-button"
+                onClick={toggleLocale}
+                aria-label={t('localeToggleLabel')}
+              >
+                {locale.toUpperCase()}
+              </button>
+            </div>
             <div className="header-summary">
-              <span>Gesamt heute</span>
-              <strong>{NUMBER_FORMATTER.format(todaysCalories)} kcal</strong>
+              <span>{t('totalToday')}</span>
+              <strong>
+                {numberFormatter.format(todaysCalories)} kcal
+              </strong>
             </div>
           </div>
           <p className="day-note">{activeDayLabel}</p>
@@ -416,8 +544,8 @@ function App() {
         <main className="chat-body">
           {activeDay.messages.length === 0 && (
             <div className="chat-empty">
-              <p>Noch keine Einträge für diesen Tag.</p>
-              <small>Tippe eine Mahlzeit ein oder lade ein Foto hoch.</small>
+              <p>{t('emptyTitle')}</p>
+              <small>{t('emptySubtitle')}</small>
             </div>
           )}
           <ul className="message-list">
@@ -443,7 +571,7 @@ function App() {
                         <span
                           className={`calorie-pill ${message.disabled ? 'disabled' : ''}`}
                         >
-                          +{NUMBER_FORMATTER.format(message.calories)} kcal
+                          +{numberFormatter.format(message.calories)} kcal
                         </span>
                         <button
                           type="button"
@@ -451,8 +579,8 @@ function App() {
                           onClick={() => toggleNutritionEntry(message.id, activeDayId)}
                           aria-label={
                             message.disabled
-                              ? 'Kalorieneintrag aktivieren'
-                              : 'Kalorieneintrag deaktivieren'
+                              ? t('messageLabelActivate')
+                              : t('messageLabelDeactivate')
                           }
                         >
                           <span className="icon-glyph" aria-hidden="true">
@@ -461,10 +589,12 @@ function App() {
                         </button>
                       </div>
                     )}
-                    {message.kind === 'ask' && <span className="hint-pill">Nachfrage</span>}
-                    {message.kind === 'setting' && <span className="hint-pill">Einstellung gespeichert</span>}
+                    {message.kind === 'ask' && <span className="hint-pill">{t('hintAsk')}</span>}
+                    {message.kind === 'setting' && (
+                      <span className="hint-pill">{t('hintSetting')}</span>
+                    )}
                   </div>
-                  <time>{TIME_FORMATTER.format(new Date(message.createdAt))}</time>
+                  <time>{timeFormatter.format(new Date(message.createdAt))}</time>
                 </li>
               )
             })}
@@ -472,8 +602,8 @@ function App() {
 
           {!apiKey && (
             <div className="setup-hint">
-              Willkommen, bevor du deine Kalorien tracken kannst, musst du ein paar Daten eingeben.
-              Bitte schreibe mir als erstes deinen OpenAI API Key.
+              <p>{t('setupIntro')}</p>
+              <p>{t('setupRequestKey')}</p>
             </div>
           )}
         </main>
@@ -484,7 +614,7 @@ function App() {
             <div>
               <p>{imageDraft.name}</p>
               <button type="button" onClick={() => setImageDraft(null)}>
-                Entfernen
+                {t('removeImage')}
               </button>
             </div>
           </div>
@@ -492,9 +622,9 @@ function App() {
 
         {isViewingArchive && (
           <div className="archive-hint">
-            Du schaust dir den Verlauf an. Neue Einträge können nur heute erstellt werden.
+            {t('archiveHint')}
             <button type="button" onClick={() => setActiveDayId(todayKey)}>
-              Zurück zu Heute
+              {t('archiveBack')}
             </button>
           </div>
         )}
@@ -503,6 +633,8 @@ function App() {
           <label
             className={`icon-button ${!apiKey || composerDisabled ? 'disabled' : ''}`}
             aria-disabled={!apiKey || composerDisabled}
+            aria-label={t('photoPickerLabel')}
+            title={t('photoPickerLabel')}
           >
             <span className="icon-glyph" aria-hidden="true">
               photo_camera
@@ -522,7 +654,13 @@ function App() {
             onChange={(event) => setInputValue(event.target.value)}
             disabled={composerDisabled}
           />
-          <button className="send-button" type="submit" disabled={composerDisabled || !canSend} aria-label="Nachricht senden">
+          <button
+            className="send-button"
+            type="submit"
+            disabled={composerDisabled || !canSend}
+            aria-label={t('sendButtonLabel')}
+            title={t('sendButtonLabel')}
+          >
             <span className="icon-glyph" aria-hidden="true">
               north
             </span>
@@ -534,7 +672,7 @@ function App() {
         <div className="history-overlay" onClick={() => setShowHistory(false)}>
           <div className="history-panel" onClick={(event) => event.stopPropagation()}>
             <div className="history-header">
-              <h3>Chat-Verlauf</h3>
+              <h3>{t('historyTitle')}</h3>
               <button type="button" onClick={() => setShowHistory(false)}>
                 ×
               </button>
@@ -552,12 +690,14 @@ function App() {
                   >
                     <div>
                       <strong>
-                        {day.date === todayKey ? 'Heute' : formatDay(day.date, SHORT_DAY_FORMATTER)}
+                        {day.date === todayKey ? t('today') : formatDay(day.date, shortDayFormatter)}
                       </strong>
-                      <span>{day.messages.length} Nachrichten</span>
+                      <span>
+                        {day.messages.length} {t('historyMessagesLabel')}
+                      </span>
                     </div>
                     <span className="history-calories">
-                      {NUMBER_FORMATTER.format(day.calories)} kcal
+                      {numberFormatter.format(day.calories)} kcal
                     </span>
                   </button>
                 </li>
@@ -565,7 +705,7 @@ function App() {
             </ul>
 
             <div className="history-settings">
-              <label htmlFor="api-key-input">OpenAI API Key</label>
+              <label htmlFor="api-key-input">{t('historyApiLabel')}</label>
               <input
                 id="api-key-input"
                 type="password"
@@ -574,7 +714,7 @@ function App() {
                 onChange={(event) => setApiKey(event.target.value)}
               />
               <button type="button" onClick={() => setApiKey('')}>
-                API Key entfernen
+                {t('historyApiClear')}
               </button>
             </div>
           </div>
